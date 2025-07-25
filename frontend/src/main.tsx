@@ -12,18 +12,18 @@ const router = createRouter({ routeTree })
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
-    interface Register {
-        router: typeof router
-    }
+  interface Register {
+    router: typeof router
+  }
 }
 
 // Create a query client
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-        </QueryClientProvider>
-    </StrictMode>
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  </StrictMode>
 )
