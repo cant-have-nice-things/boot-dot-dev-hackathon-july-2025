@@ -1,10 +1,19 @@
 .PHONY: dev backend frontend
 
-dev:
-	make -j2 backend frontend
+run-dev:
+	make -j2 run-backend-dev run-frontend-dev
 
-backend:
+install:
+    make -j2 run-backend-dev run-frontend-dev
+
+install-backend:
+	cd backend && uv sync
+
+run-backend-dev:
 	cd backend && uv run uvicorn app.main:app --reload --port 8000
 
-frontend:
+install-frontend:
+	cd frontend && npm install
+
+run-frontend-dev:
 	cd frontend && npm run dev
