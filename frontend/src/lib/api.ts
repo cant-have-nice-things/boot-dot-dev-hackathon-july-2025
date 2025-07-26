@@ -9,10 +9,7 @@ class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
     const response = await fetch(url, {
@@ -25,9 +22,7 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(
-        errorData.message || `HTTP Error: ${response.status} ${response.statusText}`
-      )
+      throw new Error(errorData.message || `HTTP Error: ${response.status} ${response.statusText}`)
     }
 
     return response.json()
@@ -53,7 +48,7 @@ class ApiClient {
           album: 'Sample Album',
           duration: 210,
           spotifyUrl: 'https://open.spotify.com/track/mock1',
-          previewUrl: 'https://example.com/preview1.mp3'
+          previewUrl: 'https://example.com/preview1.mp3',
         },
         {
           id: 'track2',
@@ -61,9 +56,9 @@ class ApiClient {
           artist: 'Another Artist',
           album: 'Another Album',
           duration: 195,
-          spotifyUrl: 'https://open.spotify.com/track/mock2'
-        }
-      ]
+          spotifyUrl: 'https://open.spotify.com/track/mock2',
+        },
+      ],
     }
 
     // When backend is ready, replace above mock with:
