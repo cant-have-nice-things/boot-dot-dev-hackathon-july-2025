@@ -1,0 +1,11 @@
+dist
+node_modules
+.next
+.nuxt
+.vite
+coverage
+*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.eslintrc.cjs

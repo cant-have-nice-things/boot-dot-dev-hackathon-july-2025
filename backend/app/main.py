@@ -1,7 +1,8 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-import os
+
+from app.routes import weather
 
 # Load environment variables
 load_dotenv()
@@ -9,7 +10,7 @@ load_dotenv()
 app = FastAPI(
     title="Weather Oracle API",
     description="Decentralized weather data oracle",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS for React frontend
@@ -21,14 +22,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Weather Oracle API"}
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-# Include routes
-from app.routes import weather
+
 app.include_router(weather.router, prefix="/api/v1")
