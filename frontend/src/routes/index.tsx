@@ -3,6 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Music } from 'lucide-react'
 import { useGeneratePlaylist } from '@/hooks/api/usePlaylist'
@@ -115,7 +116,7 @@ function Index() {
                 )}
               </form.Field>
 
-              {/* Duration Input */}
+              {/* Duration Slider */}
               <form.Field
                 name="duration"
                 validators={{
@@ -127,18 +128,26 @@ function Index() {
                 }}
               >
                 {field => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>How long? (minutes)</Label>
-                    <Input
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor={field.name}>How long?</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {field.state.value} minutes
+                      </span>
+                    </div>
+                    <Slider
                       id={field.name}
-                      name={field.name}
-                      type="number"
-                      min="5"
-                      max="300"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={e => field.handleChange(parseInt(e.target.value) || 5)}
+                      min={5}
+                      max={300}
+                      step={5}
+                      value={[field.state.value]}
+                      onValueChange={value => field.handleChange(value[0])}
+                      className="w-full"
                     />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>5 min</span>
+                      <span>300 min</span>
+                    </div>
                     {field.state.meta.errors.length > 0 && (
                       <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
                     )}
