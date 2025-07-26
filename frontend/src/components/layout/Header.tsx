@@ -18,7 +18,7 @@ export function Header() {
                 color: 'transparent',
               }}
             >
-              HackApp
+              Nice Things
             </Link>
           </div>
 
@@ -41,11 +41,9 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Action Button */}
+          {/* Action Button - hidden for now since the main page will have the form */}
           <div className="flex items-center">
-            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
-              Get Started
-            </button>
+            {/* You can add a user menu or other actions here later */}
           </div>
         </div>
 
