@@ -11,6 +11,7 @@
 
 # Dist
 node_modules
+dev-dist
 dist/
 .vinxi
 .output
