@@ -33,6 +33,16 @@ export const PlaylistSummaryCard = ({
 
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
+      {playlist.imageUrl && (
+        <img
+          src={playlist.imageUrl}
+          alt={`Cover for ${playlist.name}`}
+          className="w-full h-48 object-cover rounded-t-lg"
+          onError={e => {
+            e.currentTarget.src = 'https://via.placeholder.com/300x300.png?text=Playlist+Image' // Fallback image
+          }}
+        />
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">

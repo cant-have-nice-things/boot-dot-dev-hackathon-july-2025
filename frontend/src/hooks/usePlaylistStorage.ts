@@ -9,6 +9,7 @@ export interface StoredPlaylist {
   id: string
   name: string
   description: string
+  imageUrl: string
   activity: string
   vibe: string
   duration: number
@@ -71,6 +72,7 @@ export const usePlaylistStorage = () => {
         id: playlistResponse.id,
         name: playlistResponse.name,
         description: playlistResponse.description,
+        imageUrl: playlistResponse.imageUrl,
         activity: originalRequest.activity,
         vibe: originalRequest.vibe,
         duration: playlistResponse.duration,
