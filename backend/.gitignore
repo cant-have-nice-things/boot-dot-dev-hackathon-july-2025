@@ -144,6 +144,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Spotipy cache
+.spotipy_cache.json
+
 # Spyder project settings
 .spyderproject
 .spyproject

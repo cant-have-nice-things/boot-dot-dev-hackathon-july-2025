@@ -1,4 +1,4 @@
-// src/hooks/usePlaylistStorage.ts
+// frontend/src/hooks/usePlaylistStorage.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { PlaylistResponse } from '@/types/api'
 
@@ -62,9 +62,9 @@ export const usePlaylistStorage = () => {
   // Mutation for adding a playlist
   const addPlaylistMutation = useMutation({
     mutationFn: async ({
-      playlistResponse,
-      originalRequest,
-    }: {
+                         playlistResponse,
+                         originalRequest,
+                       }: {
       playlistResponse: PlaylistResponse
       originalRequest: { activity: string; vibe: string }
     }) => {
@@ -81,93 +81,72 @@ export const usePlaylistStorage = () => {
         spotifyUrl: playlistResponse.spotifyUrl,
       }
 
-      const currentPlaylists = queryClient.getQueryData<StoredPlaylist[]>(QUERY_KEY) || []
+      const currentPlaylists = loadPlaylistsFromStorage()
       const updatedPlaylists = [storedPlaylist, ...currentPlaylists]
-
-      return await savePlaylistsToStorage(updatedPlaylists)
+      return savePlaylistsToStorage(updatedPlaylists)
     },
-    onSuccess: updatedPlaylists => {
+    onSuccess: (updatedPlaylists) => {
       queryClient.setQueryData(QUERY_KEY, updatedPlaylists)
-    },
-    onError: error => {
-      console.error('Failed to add playlist:', error)
     },
   })
 
   // Mutation for removing a playlist
   const removePlaylistMutation = useMutation({
     mutationFn: async (playlistId: string) => {
-      const currentPlaylists = queryClient.getQueryData<StoredPlaylist[]>(QUERY_KEY) || []
-      const updatedPlaylists = currentPlaylists.filter(playlist => playlist.id !== playlistId)
-
-      return await savePlaylistsToStorage(updatedPlaylists)
+      const currentPlaylists = loadPlaylistsFromStorage()
+      const filteredPlaylists = currentPlaylists.filter(p => p.id !== playlistId)
+      return savePlaylistsToStorage(filteredPlaylists)
     },
-    onSuccess: updatedPlaylists => {
+    onSuccess: (updatedPlaylists) => {
       queryClient.setQueryData(QUERY_KEY, updatedPlaylists)
-    },
-    onError: error => {
-      console.error('Failed to remove playlist:', error)
     },
   })
 
-  // Mutation for clearing all playlists
-  const clearAllPlaylistsMutation = useMutation({
-    mutationFn: async () => await savePlaylistsToStorage([]),
-    onSuccess: updatedPlaylists => {
-      queryClient.setQueryData(QUERY_KEY, updatedPlaylists)
-    },
-    onError: error => {
-      console.error('Failed to clear playlists:', error)
-    },
-  })
-
-  // Helper functions
+  // Convenience methods
   const addPlaylist = (
-    playlistResponse: PlaylistResponse,
-    originalRequest: { activity: string; vibe: string }
+      playlistResponse: PlaylistResponse,
+      originalRequest: { activity: string; vibe: string }
   ) => {
-    addPlaylistMutation.mutate({ playlistResponse, originalRequest })
+    return addPlaylistMutation.mutateAsync({ playlistResponse, originalRequest })
   }
 
-  const removePlaylist = (id: string) => {
-    removePlaylistMutation.mutate(id)
+  const removePlaylist = (playlistId: string) => {
+    return removePlaylistMutation.mutateAsync(playlistId)
   }
 
-  const clearAllPlaylists = () => {
-    clearAllPlaylistsMutation.mutate()
+  const getPlaylistById = (id: string): StoredPlaylist | undefined => {
+    return playlists.find(p => p.id === id)
   }
 
-  const getPlaylistById = (id: string) => {
-    return playlists.find(playlist => playlist.id === id)
+  const hasPlaylists = playlists.length > 0
+
+  const getRecentPlaylists = (count: number): StoredPlaylist[] => {
+    return playlists
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, count)
   }
 
-  const getRecentPlaylists = (count: number = 5) => {
-    return playlists.slice(0, count)
+  // Add a method to save a shared playlist
+  const addSharedPlaylist = async (playlistResponse: PlaylistResponse, activity?: string, vibe?: string) => {
+    const originalRequest = {
+      activity: activity || 'Shared Activity',
+      vibe: vibe || 'mixed'
+    }
+    return addPlaylist(playlistResponse, originalRequest)
   }
 
   return {
-    // Data
     playlists,
     isLoading,
-    isError,
     error,
-
-    // Actions
+    isError,
     addPlaylist,
     removePlaylist,
-    clearAllPlaylists,
-
-    // Helpers
     getPlaylistById,
+    hasPlaylists,
     getRecentPlaylists,
-
-    // Computed values
-    hasPlaylists: playlists.length > 0,
-    playlistCount: playlists.length,
-
-    // Mutation states for UI feedback
-    isAddingPlaylist: addPlaylistMutation.isPending,
-    isRemovingPlaylist: removePlaylistMutation.isPending,
-    isClearingPlaylists: clearAllPlaylistsMutation.isPending,
+    addSharedPlaylist, // New method for shared playlists
+    isAdding: addPlaylistMutation.isPending,
+    isRemoving: removePlaylistMutation.isPending,
   }
 }

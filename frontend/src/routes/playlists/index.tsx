@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Search, Music } from 'lucide-react'
@@ -104,44 +104,6 @@ function PlaylistsIndex() {
                   Create Your First Playlist
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Stats Card (if has playlists) */}
-        {hasPlaylists && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Collection Stats</CardTitle>
-              <CardDescription>Your playlist generation overview</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold">{playlists.length}</div>
-                  <div className="text-sm text-muted-foreground">Total Playlists</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold">
-                    {Math.round(
-                      playlists.reduce((sum, p) => sum + p.duration, 0) / playlists.length
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Avg Duration (min)</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold">
-                    {playlists.reduce((sum, p) => sum + p.trackCount, 0)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Tracks</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold">
-                    {new Set(playlists.map(p => p.vibe)).size}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Unique Vibes</div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         )}

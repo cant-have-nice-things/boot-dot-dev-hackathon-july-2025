@@ -35,6 +35,10 @@ class ApiClient {
       body: JSON.stringify(data),
     })
   }
+
+  async getPlaylistById(playlistId: string): Promise<PlaylistResponse> {
+    return this.request<PlaylistResponse>(`${this.apiRouteV1}/playlist/${playlistId}`)
+  }
 }
 
 export const apiClient = new ApiClient()
