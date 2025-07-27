@@ -160,7 +160,7 @@ class SpotifyService:
         """Convert user input to Spotify audio feature parameters."""
         vibe_mappings = {
             "chill": {
-                "tempo_range": (60, 100), "energy_range": (0.1, 0.6), "valence_range": (0.2, 0.8), "danceability_range": (0.2, 0.7)
+                "tempo_range": (60, 100), "energy_range": (0.1, 0.6), "valence_range": (0.1, 0.8), "danceability_range": (0.1, 0.7)
             },
             "upbeat": {
                 "tempo_range": (110, 180), "energy_range": (0.6, 1.0), "valence_range": (0.5, 1.0), "danceability_range": (0.5, 1.0)
@@ -275,23 +275,17 @@ class SpotifyService:
 
         filtered_tracks = []
         for track in tracks:
-            spotify_id = track.get('id')
-            print (f"Spotify ID = {spotify_id}")
-            if not spotify_id:
-                print("no spotify ids")
-                continue
-            reccobeats_id = spotify_id_to_reccobeats_info_map.get(spotify_id)['reccobeats_id']
-            print(f"Reccobeats ID = {reccobeats_id}")
-
             try:
-                if not _reccobeats_final_audio_features_cache.__contains__(reccobeats_id):
-                    print("Not found in cache")
+                spotify_id = track.get('id')
+                if not spotify_id:
                     continue
-                else:
-                    print("Found in cache")
+                reccobeats_id = spotify_id_to_reccobeats_info_map.get(spotify_id)['reccobeats_id']
+
+                if not _reccobeats_final_audio_features_cache.__contains__(reccobeats_id):
+                    continue
 
                 features = _reccobeats_final_audio_features_cache.get(reccobeats_id)
-                print(f"{spotify_id} - " + features)
+                print(f"{spotify_id} -  + {features}")
             except Exception as e:
                 print(f"Error getting audio features from cache: {e}")
 
