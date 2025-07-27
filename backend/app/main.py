@@ -1,4 +1,5 @@
 import logging
+from os import getenv
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -81,15 +82,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+allowed_origins = getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+
 # CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://localhost:3000",
-        "http://localhost:3001",
-        "https://localhost:3001",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
