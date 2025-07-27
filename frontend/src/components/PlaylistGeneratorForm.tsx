@@ -52,10 +52,6 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Your Playlist</CardTitle>
-        <CardDescription>
-          Just fill in a few details and we'll curate the perfect soundtrack for your activity.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -75,14 +71,14 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
           >
             {field => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>What are you doing?</Label>
+                <Label htmlFor={field.name}>What are you up to?</Label>
                 <Input
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
-                  placeholder="e.g., yoga, studying, cleaning, working out..."
+                  placeholder="e.g. workout, cooking, cleaning, commuting..."
                   className="w-full"
                 />
                 {field.state.meta.errors.length > 0 && (
@@ -92,30 +88,8 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
             )}
           </form.Field>
 
-          {/* Duration Slider */}
-          <form.Field name="duration">
-            {field => (
-              <div className="space-y-3">
-                <Label htmlFor={field.name}>Duration: {field.state.value} minutes</Label>
-                <Slider
-                  id={field.name}
-                  min={10}
-                  max={180}
-                  step={5}
-                  value={[field.state.value]}
-                  onValueChange={values => field.handleChange(values[0])}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>10 min</span>
-                  <span>3 hours</span>
-                </div>
-              </div>
-            )}
-          </form.Field>
-
-          {/* Vibe Selection */}
-          <form.Field
+           {/* Vibe Selection */}
+           <form.Field
             name="vibe"
             validators={{
               onChange: ({ value }) => (!value?.trim() ? 'Please select a vibe' : undefined),
@@ -123,7 +97,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
           >
             {field => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>What's the vibe?</Label>
+                <Label htmlFor={field.name}>What mood are you feeling?</Label>
                 <select
                   id={field.name}
                   name={field.name}
@@ -142,7 +116,54 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
                   <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
                 )}
               </div>
+
             )}
+          </form.Field>
+
+          {/* Duration Slider */}
+          <form.Field name="duration">
+            {field => {
+              const formatTime = (min) => {
+                if (min < 60) return `${min} min`;
+                const h = Math.floor(min / 60);
+                const m = min % 60;
+                return m === 0 ? `${h}h` : `${h}h ${m}min`;
+              };
+
+              // Convert slider position to actual minutes using log scale
+              const positionToMinutes = (position) => {
+                // Log scale from 10 to 1440 minutes
+                const minLog = Math.log(10);
+                const maxLog = Math.log(1440);
+                const scale = (maxLog - minLog) / 100;
+                return Math.round(Math.exp(minLog + scale * position) / 5) * 5; // Round to nearest 5
+              };
+
+              // Convert minutes back to slider position
+              const minutesToPosition = (minutes) => {
+                const minLog = Math.log(10);
+                const maxLog = Math.log(1440);
+                const scale = (maxLog - minLog) / 100;
+                return (Math.log(minutes) - minLog) / scale;
+              };
+
+              return (
+                <div className="space-y-3">
+                  <Label htmlFor={field.name}>
+                    How long will you be doing it? ~ {formatTime(field.state.value)}
+                  </Label>
+                  <Slider
+                    id={field.name}
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[minutesToPosition(field.state.value)]}
+                    onValueChange={values => field.handleChange(positionToMinutes(values[0]))}
+                    className="w-full"
+                  />
+                </div>
+              );
+            }}
           </form.Field>
 
           {/* Submit Button */}
