@@ -1,8 +1,7 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from .routes import playlist
+from .routes.playlist import router as playlist_router
 
 # Load environment variables
 load_dotenv()
@@ -37,5 +36,4 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-
-app.include_router(playlist.router, prefix="/api/v1")
+app.include_router(playlist_router, prefix="/api/v1") # Ensure this line is active

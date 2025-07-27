@@ -11,6 +11,7 @@ export interface PlaylistResponse {
   name: string
   description: string
   spotifyUrl: string
+  imageUrl: string
   tracks: Track[]
   duration: number
   createdAt: string
