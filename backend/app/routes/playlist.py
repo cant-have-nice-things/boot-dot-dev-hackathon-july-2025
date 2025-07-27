@@ -73,3 +73,11 @@ async def generate_playlist(request: PlaylistRequest):
     )
 
     return response
+
+@router.get("/playlist/{playlist_id}", response_model=PlaylistResponse)
+async def get_playlist(playlist_id: str):
+    """
+    Get a playlist by ID for sharing functionality.
+    This allows users to fetch playlists that were shared with them.
+    """
+    pass

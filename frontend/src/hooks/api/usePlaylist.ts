@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api'
 import type { PlaylistRequest, PlaylistResponse } from '@/types/api'
 
@@ -11,5 +11,15 @@ export const useGeneratePlaylist = () => {
     onError: error => {
       console.error('Failed to generate playlist:', error)
     },
+  })
+}
+
+export const useFetchPlaylist = (playlistId: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['playlist', playlistId],
+    queryFn: () => apiClient.getPlaylistById(playlistId),
+    enabled: enabled && !!playlistId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1, // Only retry once for shared playlists
   })
 }
