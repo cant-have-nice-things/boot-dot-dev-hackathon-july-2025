@@ -1,0 +1,3 @@
+"""
+Database domain logic.
+"""
