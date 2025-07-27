@@ -1,0 +1,17 @@
+# docker-compose.yml - Redis with local data directory
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: nice-things-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data  # Store data in project/data/redis directory
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

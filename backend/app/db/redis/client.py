@@ -1,10 +1,9 @@
+import redis.asyncio as redis
+from typing import Any, Dict, List, Callable, Optional, Set
 import json
 import logging
 
-import redis.asyncio as redis
-
 logger = logging.getLogger(__name__)
-
 
 class RedisClient:
     """
@@ -14,7 +13,7 @@ class RedisClient:
 
     def __init__(self, redis_url: str):
         self.redis_url = redis_url
-        self._redis: redis.Redis | None = None
+        self._redis: Optional[redis.Redis] = None
 
     async def connect(self) -> None:
         """Establish connection to Redis."""
@@ -48,7 +47,7 @@ class RedisClient:
             return False
 
     # String operations
-    async def get(self, key: str) -> str | None:
+    async def get(self, key: str) -> Optional[str]:
         """Get string value by key."""
         try:
             result = await self.redis.get(key)
@@ -58,7 +57,10 @@ class RedisClient:
             return None
 
     async def set(
-        self, key: str, value: str, expire_seconds: int | None = None
+            self,
+            key: str,
+            value: str,
+            expire_seconds: Optional[int] = None
     ) -> bool:
         """Set key-value pair with optional expiration."""
         try:
@@ -85,7 +87,7 @@ class RedisClient:
             return False
 
     # JSON operations (convenience methods)
-    async def get_json(self, key: str) -> dict | None:
+    async def get_json(self, key: str) -> Optional[Dict]:
         """Get JSON value by key."""
         try:
             value = await self.get(key)
@@ -97,7 +99,10 @@ class RedisClient:
             return None
 
     async def set_json(
-        self, key: str, value: dict, expire_seconds: int | None = None
+            self,
+            key: str,
+            value: Dict,
+            expire_seconds: Optional[int] = None
     ) -> bool:
         """Set JSON value with optional expiration."""
         try:
@@ -108,7 +113,7 @@ class RedisClient:
             return False
 
     # List operations
-    async def lpush(self, key: str, *values: str) -> int | None:
+    async def lpush(self, key: str, *values: str) -> Optional[int]:
         """Push values to the left of a list."""
         try:
             return await self.redis.lpush(key, *values)
@@ -116,7 +121,7 @@ class RedisClient:
             logger.error(f"Failed to lpush to key {key}: {e}")
             return None
 
-    async def rpush(self, key: str, *values: str) -> int | None:
+    async def rpush(self, key: str, *values: str) -> Optional[int]:
         """Push values to the right of a list."""
         try:
             return await self.redis.rpush(key, *values)
@@ -124,13 +129,11 @@ class RedisClient:
             logger.error(f"Failed to rpush to key {key}: {e}")
             return None
 
-    async def lrange(self, key: str, start: int = 0, end: int = -1) -> list[str]:
+    async def lrange(self, key: str, start: int = 0, end: int = -1) -> List[str]:
         """Get list elements in range."""
         try:
             result = await self.redis.lrange(key, start, end)
-            return [
-                item.decode() if isinstance(item, bytes) else item for item in result
-            ]
+            return [item.decode() if isinstance(item, bytes) else item for item in result]
         except Exception as e:
             logger.error(f"Failed to lrange key {key}: {e}")
             return []
@@ -144,7 +147,7 @@ class RedisClient:
             return 0
 
     # Hash operations
-    async def hget(self, key: str, field: str) -> str | None:
+    async def hget(self, key: str, field: str) -> Optional[str]:
         """Get hash field value."""
         try:
             result = await self.redis.hget(key, field)
@@ -161,14 +164,13 @@ class RedisClient:
             logger.error(f"Failed to hset {field} in key {key}: {e}")
             return False
 
-    async def hgetall(self, key: str) -> dict[str, str]:
+    async def hgetall(self, key: str) -> Dict[str, str]:
         """Get all hash fields and values."""
         try:
             result = await self.redis.hgetall(key)
             return {
-                k.decode() if isinstance(k, bytes) else k: v.decode()
-                if isinstance(v, bytes)
-                else v
+                k.decode() if isinstance(k, bytes) else k:
+                    v.decode() if isinstance(v, bytes) else v
                 for k, v in result.items()
             }
         except Exception as e:
@@ -192,13 +194,11 @@ class RedisClient:
             logger.error(f"Failed to sadd to key {key}: {e}")
             return 0
 
-    async def smembers(self, key: str) -> set[str]:
+    async def smembers(self, key: str) -> Set[str]:
         """Get all set members."""
         try:
             result = await self.redis.smembers(key)
-            return {
-                item.decode() if isinstance(item, bytes) else item for item in result
-            }
+            return {item.decode() if isinstance(item, bytes) else item for item in result}
         except Exception as e:
             logger.error(f"Failed to smembers for key {key}: {e}")
             return set()
@@ -212,7 +212,7 @@ class RedisClient:
             return 0
 
     # Utility operations
-    async def increment(self, key: str, amount: int = 1) -> int | None:
+    async def increment(self, key: str, amount: int = 1) -> Optional[int]:
         """Increment a counter."""
         try:
             return await self.redis.incrby(key, amount)
@@ -228,7 +228,7 @@ class RedisClient:
             logger.error(f"Failed to set expiration on key {key}: {e}")
             return False
 
-    async def keys(self, pattern: str = "*") -> list[str]:
+    async def keys(self, pattern: str = "*") -> List[str]:
         """Get keys matching pattern."""
         try:
             keys = await self.redis.keys(pattern)

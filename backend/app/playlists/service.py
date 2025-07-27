@@ -376,8 +376,6 @@ class PlaylistService:
 
             # Get album info
             album_data = track.get("album", {})
-            album_name = album_data.get("name", "Unknown Album")
-            album_images = album_data.get("images", [])
 
             # Ensure we have essential data
             if all(
