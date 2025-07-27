@@ -19,7 +19,7 @@ class Track(BaseModel):
     id: str
     name: str
     artist: str
-    album: dict[str, Any]  # Contains name and images
+    album: dict[str, Any]  # Contains full Spotify album object
     duration: int  # Duration in milliseconds
     spotifyUrl: str
     previewUrl: str | None = None
@@ -36,3 +36,6 @@ class PlaylistResponse(BaseModel):
     tracks: list[Track]
     duration: int  # Total playlist duration in minutes
     createdAt: str
+    # NEW: Add activity and vibe to the response
+    activity: str
+    vibe: str

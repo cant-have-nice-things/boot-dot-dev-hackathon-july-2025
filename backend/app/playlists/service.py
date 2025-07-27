@@ -105,7 +105,7 @@ class PlaylistService:
             ),
             "description": playlist_result.get(
                 "playlist_description",
-                f"A {vibe} playlist for your {activity} session.",
+                f"A {vibe} playlist for your {activity} session."
             ),
             "spotifyUrl": playlist_result.get("playlist_url", ""),
             "imageUrl": playlist_result.get(
@@ -115,12 +115,19 @@ class PlaylistService:
             "tracks": formatted_tracks,
             "duration": int(total_duration_minutes),
             "createdAt": datetime.now().isoformat(),
+            # NEW: Include the original activity and vibe in the response
+            "activity": activity,
+            "vibe": vibe,
         }
 
         # Cache the complete playlist for future requests
         await self.playlist_repo.store_generated_playlist(
             activity, vibe, duration_minutes, final_playlist_data
         )
+
+        playlist_id = final_playlist_data.get("id")
+        if playlist_id:
+            await self.playlist_repo.store_playlist_by_id(playlist_id, final_playlist_data)
 
         return final_playlist_data
 
@@ -462,3 +469,15 @@ class PlaylistService:
         except Exception as e:
             logger.error(f"Error creating Spotify playlist: {e}")
             return None
+
+    async def get_playlist_by_id(self, playlist_id: str) -> dict[str, Any] | None:
+        """
+        Get a playlist by its ID from cache.
+
+        Args:
+            playlist_id: The playlist ID to retrieve
+
+        Returns:
+            Playlist data if found, None otherwise
+        """
+        return await self.playlist_repo.get_playlist_by_id(playlist_id)

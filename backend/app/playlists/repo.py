@@ -25,12 +25,57 @@ class PlaylistRepo:
         params_hash = hashlib.md5(params_str.encode()).hexdigest()
         return f"{prefix}:{params_hash}"
 
+    async def store_playlist_by_id(
+            self, playlist_id: str, playlist_data: dict[str, Any]
+    ) -> bool:
+        """
+        Store a playlist by its ID for direct retrieval.
+
+        Args:
+            playlist_id: The playlist ID to use as key
+            playlist_data: Complete playlist data
+
+        Returns:
+            True if stored successfully
+        """
+        cache_key = f"playlist_by_id:{playlist_id}"
+
+        try:
+            success = await self.redis_client.set_json(cache_key, playlist_data)
+            if success:
+                logger.info(f"Stored playlist by ID: {playlist_id}")
+            return success
+        except Exception as e:
+            logger.error(f"Failed to store playlist by ID {playlist_id}: {e}")
+            return False
+
+    async def get_playlist_by_id(self, playlist_id: str) -> dict[str, Any] | None:
+        """
+        Get a playlist by its ID.
+
+        Args:
+            playlist_id: The playlist ID to retrieve
+
+        Returns:
+            Playlist data if found, None otherwise
+        """
+        cache_key = f"playlist_by_id:{playlist_id}"
+
+        try:
+            playlist_data = await self.redis_client.get_json(cache_key)
+            if playlist_data:
+                logger.info(f"Found playlist by ID: {playlist_id}")
+            return playlist_data
+        except Exception as e:
+            logger.error(f"Failed to get playlist by ID {playlist_id}: {e}")
+            return None
+
     async def get_or_fetch_spotify_tracks(
-        self,
-        query: str,
-        limit: int,
-        offset: int,
-        fetch_callback: Callable[[], list[dict[str, Any]]],
+            self,
+            query: str,
+            limit: int,
+            offset: int,
+            fetch_callback: Callable[[], list[dict[str, Any]]],
     ) -> list[dict[str, Any]]:
         """
         Get Spotify tracks from cache or fetch using callback.
@@ -75,9 +120,9 @@ class PlaylistRepo:
             return []
 
     async def get_or_fetch_spotify_audio_features(
-        self,
-        track_ids: list[str],
-        fetch_callback: Callable[[], dict[str, dict[str, Any]]],
+            self,
+            track_ids: list[str],
+            fetch_callback: Callable[[], dict[str, dict[str, Any]]],
     ) -> dict[str, dict[str, Any]]:
         """
         Get Spotify audio features from cache or fetch using callback.
@@ -115,7 +160,7 @@ class PlaylistRepo:
                 # Cache each individual feature set
                 for track_id, features in fresh_features.items():
                     if (
-                        track_id in missing_ids
+                            track_id in missing_ids
                     ):  # Only cache the ones we actually requested
                         cache_key = self._generate_cache_key(
                             "spotify_audio_features", track_id=track_id
@@ -135,7 +180,7 @@ class PlaylistRepo:
         return features_map
 
     async def get_or_fetch_reccobeats_metadata(
-        self, spotify_ids: list[str], fetch_callback: Callable[[], dict[str, Any]]
+            self, spotify_ids: list[str], fetch_callback: Callable[[], dict[str, Any]]
     ) -> dict[str, Any]:
         """
         Get ReccoBeats metadata from cache or fetch using callback.
@@ -194,7 +239,7 @@ class PlaylistRepo:
         return metadata_map
 
     async def get_or_fetch_reccobeats_audio_features(
-        self, reccobeats_ids: list[str], fetch_callback: Callable[[], dict[str, Any]]
+            self, reccobeats_ids: list[str], fetch_callback: Callable[[], dict[str, Any]]
     ) -> dict[str, Any]:
         """
         Get ReccoBeats audio features from cache or fetch using callback.
@@ -253,11 +298,11 @@ class PlaylistRepo:
         return features_map
 
     async def store_generated_playlist(
-        self,
-        activity: str,
-        vibe: str,
-        duration_minutes: int,
-        playlist_data: dict[str, Any],
+            self,
+            activity: str,
+            vibe: str,
+            duration_minutes: int,
+            playlist_data: dict[str, Any],
     ) -> bool:
         """
         Store a generated playlist for potential future reuse.
@@ -290,7 +335,7 @@ class PlaylistRepo:
             return False
 
     async def get_generated_playlist(
-        self, activity: str, vibe: str, duration_minutes: int
+            self, activity: str, vibe: str, duration_minutes: int
     ) -> dict[str, Any] | None:
         """
         Get a previously generated playlist if it exists.
