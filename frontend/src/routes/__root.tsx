@@ -7,12 +7,12 @@ import { Toaster } from '@/components/ui/toaster.tsx'
 export const Route = createRootRoute({
   component: () => (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1">
         <Outlet />
         <Toaster />
       </main>
-      <Footer />
+      {/* <Footer /> */}
+      
       {process.env.NODE_ENV === 'development' && <TanStackRouterDevtools />}
     </div>
   ),

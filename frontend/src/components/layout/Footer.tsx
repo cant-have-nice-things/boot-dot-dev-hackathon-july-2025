@@ -17,22 +17,11 @@ export function Footer() {
                 color: 'transparent',
               }}
             >
-              HackApp
+              Nice Things
             </h3>
             <p className="text-sm text-muted-foreground">
-              A modern React template for rapid development and deployment.
+              Just here to make the day more enjoyable.
             </p>
-          </div>
-
-          {/* Features */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Features</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>React + TypeScript</li>
-              <li>TanStack Router</li>
-              <li>Tailwind CSS</li>
-              <li>shadcn/ui</li>
-            </ul>
           </div>
 
           {/* Navigation */}
@@ -54,28 +43,8 @@ export function Footer() {
 
           {/* Resources */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Resources</h4>
+            <h4 className="text-sm font-semibold">Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <a
-                  href="https://tanstack.com/router"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
-                >
-                  TanStack Router
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://tailwindcss.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
-                >
-                  Tailwind CSS
-                </a>
-              </li>
               <li>
                 <a
                   href="https://ui.shadcn.com"
@@ -88,14 +57,6 @@ export function Footer() {
               </li>
             </ul>
           </div>
-        </div>
-
-        {/* Bottom */}
-        <div className="mt-8 pt-6 border-t text-center text-sm text-muted-foreground">
-          <p>
-            &copy; {new Date().getFullYear()} HackApp. Built with React, TypeScript, and modern
-            tools.
-          </p>
         </div>
       </div>
     </footer>
