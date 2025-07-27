@@ -14,7 +14,7 @@ export const useGeneratePlaylist = () => {
   })
 }
 
-export const useFetchPlaylist = (playlistId: string, enabled: boolean = true) => {
+export const useGetPlaylist = (playlistId: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: ['playlist', playlistId],
     queryFn: () => apiClient.getPlaylistById(playlistId),

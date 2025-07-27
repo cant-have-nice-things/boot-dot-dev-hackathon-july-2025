@@ -2,22 +2,20 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Music, ExternalLink, ArrowLeft, Share2, Download } from 'lucide-react'
+import { ArrowLeft, Music, ExternalLink, Share2, Download } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { usePlaylistStorage } from '@/hooks/usePlaylistStorage'
-import { useFetchPlaylist } from '@/hooks/api/usePlaylist'
-import { useToast } from '@/hooks/useToast'
 import { ShareDialog } from '@/components/ShareDialog'
+import { usePlaylistStorage } from '@/hooks/usePlaylistStorage'
+import { useGetPlaylist } from '@/hooks/api/usePlaylist'
 import { useEffect } from 'react'
 
 export const Route = createFileRoute('/playlists/$playlistId')({
-  component: PlaylistDetails,
+  component: PlaylistDetail,
 })
 
-function PlaylistDetails() {
+function PlaylistDetail() {
   const { playlistId } = Route.useParams()
-  const { getPlaylistById, addSharedPlaylist, isLoading: isLoadingStorage } = usePlaylistStorage()
-  const { toast } = useToast()
+  const { getPlaylistById, addPlaylist, isLoading: isLoadingStorage } = usePlaylistStorage()
 
   // Check if playlist exists in local storage
   const localPlaylist = getPlaylistById(playlistId)
@@ -27,67 +25,69 @@ function PlaylistDetails() {
   // 2. No playlist found in localStorage
   const shouldFetchFromAPI = !isLoadingStorage && !localPlaylist
 
-  // If not in local storage, try to fetch from API
-  const { data: fetchedPlaylist, isLoading: isLoadingAPI, error } = useFetchPlaylist(
+  console.log('Playlist logic:', {
     playlistId,
-    shouldFetchFromAPI
-  )
+    hasLocalPlaylist: !!localPlaylist,
+    isLoadingStorage,
+    shouldFetchFromAPI,
+    localTrackCount: localPlaylist?.tracks?.length
+  })
 
-  // Use local playlist if available, otherwise use fetched playlist
+  // If not in local storage, try to fetch from API (shared playlist scenario)
+  const {
+    data: fetchedPlaylist,
+    isLoading: isLoadingAPI,
+    error
+  } = useGetPlaylist(playlistId, shouldFetchFromAPI)
+
+  // SIMPLIFIED: Both local and fetched playlists are now the same type
   const playlist = localPlaylist || fetchedPlaylist
+  const isFromLocal = !!localPlaylist
+  const isFromAPI = !!fetchedPlaylist && !localPlaylist
 
-  // Auto-save fetched playlist to local storage
+  // Auto-save fetched playlist to local storage (shared playlist scenario)
   useEffect(() => {
     if (fetchedPlaylist && !localPlaylist) {
-      addSharedPlaylist(fetchedPlaylist)
-        .then(() => {
-          toast({
-            title: "Playlist saved!",
-            description: "This shared playlist has been added to your collection.",
-            duration: 4000,
+      addPlaylist(fetchedPlaylist) // SIMPLIFIED: No need for mapping or extra parameters
+          .then(() => {
+            console.log('Shared playlist automatically saved to local storage')
           })
-        })
-        .catch((err) => {
-          console.error('Failed to auto-save playlist:', err)
-          toast({
-            title: "Auto-save failed",
-            description: "Could not save the playlist automatically.",
-            variant: "destructive",
-            duration: 3000,
+          .catch((err) => {
+            console.error('Failed to auto-save playlist:', err)
           })
-        })
     }
-  }, [fetchedPlaylist, localPlaylist, addSharedPlaylist, toast])
+  }, [fetchedPlaylist, localPlaylist, addPlaylist])
 
-  if (isLoadingStorage || isLoadingAPI) {
+  if (isLoadingStorage || (shouldFetchFromAPI && isLoadingAPI)) {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          <h1 className="text-2xl font-bold">Loading Playlist...</h1>
-          <p className="text-muted-foreground">
-            Fetching playlist details from the server.
-          </p>
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <h1 className="text-2xl font-bold">Loading Playlist...</h1>
+            <p className="text-muted-foreground">
+              {isLoadingStorage ? 'Checking your saved playlists...' : 'Fetching playlist details from the server.'}
+            </p>
+          </div>
         </div>
-      </div>
     )
   }
 
   if (error || !playlist) {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          <h1 className="text-2xl font-bold">Playlist Not Found</h1>
-          <p className="text-muted-foreground">
-            {error ? 'This playlist could not be loaded from the server.' : 'This playlist doesn\'t exist.'}
-          </p>
-          <Link to="/">
-            <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Generator
-            </Button>
-          </Link>
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <h1 className="text-2xl font-bold">Playlist Not Found</h1>
+            <p className="text-muted-foreground">
+              {error ? 'This playlist could not be loaded from the server.' : 'This playlist doesn\'t exist.'}
+            </p>
+            <Link to="/">
+              <Button variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Generator
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
     )
   }
 
@@ -103,148 +103,173 @@ function PlaylistDetails() {
     return colors[vibe.toLowerCase()] || colors.chill
   }
 
-  // Determine track count - for fetched playlists use tracks array, for local use stored count
-  const trackCount = 'trackCount' in playlist ? playlist.trackCount : playlist.tracks?.length || 0
+  // SIMPLIFIED: No need for type checking or fallbacks - activity and vibe are always present
+  const tracks = playlist.tracks || []
+  const hasFullTrackData = tracks.length > 0
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link to="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Create New Playlist
-            </Button>
-          </Link>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Link to="/">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Create New Playlist
+              </Button>
+            </Link>
+          </div>
 
-        {/* Auto-saved notification - only show if this was a shared playlist */}
-        {fetchedPlaylist && localPlaylist && (
-          <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                  <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-green-900 dark:text-green-100">Shared Playlist Saved</h3>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    This playlist has been automatically added to your collection.
-                    You can remove it anytime from your playlists page.
-                  </p>
-                </div>
+          {/* Auto-saved notification - only show if this was a shared playlist */}
+          {isFromAPI && (
+              <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                      <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-green-900 dark:text-green-100">Shared Playlist Saved</h3>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        This playlist has been automatically added to your collection.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          )}
+
+          {/* Debug info in development */}
+          {process.env.NODE_ENV === 'development' && (
+              <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+                <CardContent className="pt-6">
+                  <div className="text-sm">
+                    <strong>Debug:</strong> Source: {isFromLocal ? 'Local Storage' : 'API'} |
+                    Tracks: {tracks.length} |
+                    Has Album Art: {tracks.some(t => t.album?.images?.length > 0) ? 'Yes' : 'No'}
+                  </div>
+                </CardContent>
+              </Card>
+          )}
+
+          {/* Playlist Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Music className="w-6 h-6" />
+                {playlist.name}
+              </CardTitle>
+              <CardDescription>{playlist.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="text-sm">
+                  <Music className="w-3 h-3 mr-1" />
+                  {playlist.activity}
+                </Badge>
+                <Badge className={`text-sm ${getVibeColor(playlist.vibe)}`}>
+                  {playlist.vibe}
+                </Badge>
+                <Badge variant="outline" className="text-sm">
+                  {tracks.length} tracks • {playlist.duration} min
+                </Badge>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button onClick={() => window.open(playlist.spotifyUrl, '_blank')} className="flex-1">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open in Spotify
+                </Button>
+                <ShareDialog playlistName={playlist.name}>
+                  <Button variant="outline">
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Playlist
+                  </Button>
+                </ShareDialog>
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Playlist Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Music className="w-6 h-6" />
-              {playlist.name}
-            </CardTitle>
-            <CardDescription>{playlist.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="text-sm">
-                <Music className="w-3 h-3 mr-1" />
-                {'activity' in playlist ? playlist.activity : 'Shared Activity'}
-              </Badge>
-              <Badge className={`text-sm ${getVibeColor('vibe' in playlist ? playlist.vibe : 'mixed')}`}>
-                {'vibe' in playlist ? playlist.vibe : 'mixed'}
-              </Badge>
-            </div>
+          {/* Track List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Track List</CardTitle>
+              <CardDescription>
+                {hasFullTrackData ?
+                    `${tracks.length} tracks with full album artwork and details` :
+                    'Track information is not available for this playlist'
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {hasFullTrackData ? (
+                    tracks.map((track) => {
+                      // Get album artwork (smallest available image for list view)
+                      const albumImage = track.album?.images?.find(img => img.height <= 300) ||
+                          track.album?.images?.[track.album.images.length - 1];
 
-            {/* Actions */}
-            <div className="flex gap-3">
-              <Button onClick={() => window.open(playlist.spotifyUrl, '_blank')} className="flex-1">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open in Spotify
-              </Button>
-              <ShareDialog playlistName={playlist.name}>
-                <Button variant="outline">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Playlist
-                </Button>
-              </ShareDialog>
-            </div>
-          </CardContent>
-        </Card>
+                      return (
+                          <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg border">
+                            {/* Album artwork or fallback */}
+                            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center overflow-hidden relative">
+                              {albumImage ? (
+                                  <>
+                                    <img
+                                        src={albumImage.url}
+                                        alt={`${track.album?.name || 'Album'} cover`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          // Fallback to music icon if image fails to load
+                                          const target = e.currentTarget as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          const fallback = target.nextElementSibling as HTMLElement;
+                                          if (fallback) fallback.style.display = 'flex';
+                                        }}
+                                    />
+                                    <Music className="w-5 h-5 text-muted-foreground absolute inset-0 m-auto hidden" />
+                                  </>
+                              ) : (
+                                  <Music className="w-5 h-5 text-muted-foreground" />
+                              )}
+                            </div>
 
-        {/* Track List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Track List</CardTitle>
-            <CardDescription>
-              {fetchedPlaylist?.tracks ?
-                'Detailed track information from the playlist.' :
-                'Detailed track information will be available when connected to the full playlist data.'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Show actual tracks if we have them from the API */}
-              {fetchedPlaylist?.tracks ? (
-                fetchedPlaylist.tracks.map((track) => (
-                  <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg border">
-                    <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-                      <Music className="w-5 h-5 text-muted-foreground" />
+                            <div className="flex-1">
+                              <div className="font-medium">{track.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {track.artist} • {track.album?.name || 'Unknown Album'}
+                              </div>
+                            </div>
+
+                            <div className="text-sm text-muted-foreground">
+                              {Math.floor(track.duration / (1000 * 60))}:
+                              {String(Math.floor(track.duration / 1000) % 60).padStart(2, '0')}
+                            </div>
+
+                            {track.spotifyUrl && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => window.open(track.spotifyUrl, '_blank')}
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                            )}
+                          </div>
+                      );
+                    })
+                ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Track details are not available for this playlist.</p>
                     </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{track.name}</div>
-                      <div className="text-sm text-muted-foreground">{track.artist} • {track.album}</div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {Math.floor(track.duration / 60)}:
-                      {String(track.duration % 60).padStart(2, '0')}
-                    </div>
-                    {track.spotifyUrl && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(track.spotifyUrl, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                /* Placeholder tracks for local playlists */
-                Array.from({ length: trackCount }, (_, i) => (
-                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg border">
-                    <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-                      <Music className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">Track {i + 1}</div>
-                      <div className="text-sm text-muted-foreground">Artist • Album</div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {Math.floor(Math.random() * 3) + 2}:
-                      {String(Math.floor(Math.random() * 60)).padStart(2, '0')}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {!fetchedPlaylist?.tracks && (
-              <div className="mt-6 text-center text-sm text-muted-foreground">
-                <p>
-                  💡 Full track details will be available when we implement detailed playlist fetching
-                  from the backend.
-                </p>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
   )
 }

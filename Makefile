@@ -46,7 +46,9 @@ install-frontend:
 
 # Development targets
 dev:
-	@echo "Starting development servers..."
+	@echo "Starting redis and development servers..."
+	make redis-start
+	@sleep 2  # Give Redis time to start
 	make -j2 dev-backend dev-frontend
 
 dev-backend:
@@ -56,6 +58,31 @@ dev-backend:
 dev-frontend:
 	@echo "Starting frontend development server..."
 	cd frontend && npm run dev
+
+# Redis commands
+redis-start:
+	@echo "Starting Redis container..."
+	@docker run -d --name nice-things-redis -p 6379:6379 -v redis_data:/data redis:7-alpine redis-server --appendonly yes || docker start nice-things-redis
+	@echo "Redis available at localhost:6379"
+
+redis-stop:
+	@echo "Stopping Redis container..."
+	@docker stop nice-things-redis || true
+
+redis-restart:
+	@echo "Restarting Redis container..."
+	make redis-stop
+	@sleep 1
+	make redis-start
+
+redis-cli:
+	@echo "Connecting to Redis CLI..."
+	@docker exec -it nice-things-redis redis-cli
+
+redis-logs:
+	@echo "Showing Redis logs..."
+	@docker logs nice-things-redis
+
 
 # Build targets
 build: build-backend build-frontend

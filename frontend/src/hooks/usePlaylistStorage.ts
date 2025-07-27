@@ -1,22 +1,11 @@
-// frontend/src/hooks/usePlaylistStorage.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { PlaylistResponse } from '@/types/api'
 
 const STORAGE_KEY = 'user_playlists'
 const QUERY_KEY = ['playlists'] as const
 
-export interface StoredPlaylist {
-  id: string
-  name: string
-  description: string
-  imageUrl: string
-  activity: string
-  vibe: string
-  duration: number
-  trackCount: number
-  createdAt: string
-  spotifyUrl: string
-}
+// NOW: StoredPlaylist is just an alias for PlaylistResponse
+export type StoredPlaylist = PlaylistResponse
 
 // Helper functions for localStorage operations
 const loadPlaylistsFromStorage = (): StoredPlaylist[] => {
@@ -61,28 +50,10 @@ export const usePlaylistStorage = () => {
 
   // Mutation for adding a playlist
   const addPlaylistMutation = useMutation({
-    mutationFn: async ({
-                         playlistResponse,
-                         originalRequest,
-                       }: {
-      playlistResponse: PlaylistResponse
-      originalRequest: { activity: string; vibe: string }
-    }) => {
-      const storedPlaylist: StoredPlaylist = {
-        id: playlistResponse.id,
-        name: playlistResponse.name,
-        description: playlistResponse.description,
-        imageUrl: playlistResponse.imageUrl,
-        activity: originalRequest.activity,
-        vibe: originalRequest.vibe,
-        duration: playlistResponse.duration,
-        trackCount: playlistResponse.tracks.length,
-        createdAt: playlistResponse.createdAt,
-        spotifyUrl: playlistResponse.spotifyUrl,
-      }
-
+    mutationFn: async (playlistResponse: PlaylistResponse) => {
+      // SIMPLIFIED: Just store the PlaylistResponse directly
       const currentPlaylists = loadPlaylistsFromStorage()
-      const updatedPlaylists = [storedPlaylist, ...currentPlaylists]
+      const updatedPlaylists = [playlistResponse, ...currentPlaylists]
       return savePlaylistsToStorage(updatedPlaylists)
     },
     onSuccess: (updatedPlaylists) => {
@@ -103,11 +74,8 @@ export const usePlaylistStorage = () => {
   })
 
   // Convenience methods
-  const addPlaylist = (
-      playlistResponse: PlaylistResponse,
-      originalRequest: { activity: string; vibe: string }
-  ) => {
-    return addPlaylistMutation.mutateAsync({ playlistResponse, originalRequest })
+  const addPlaylist = (playlistResponse: PlaylistResponse) => {
+    return addPlaylistMutation.mutateAsync(playlistResponse)
   }
 
   const removePlaylist = (playlistId: string) => {
@@ -126,15 +94,6 @@ export const usePlaylistStorage = () => {
         .slice(0, count)
   }
 
-  // Add a method to save a shared playlist
-  const addSharedPlaylist = async (playlistResponse: PlaylistResponse, activity?: string, vibe?: string) => {
-    const originalRequest = {
-      activity: activity || 'Shared Activity',
-      vibe: vibe || 'mixed'
-    }
-    return addPlaylist(playlistResponse, originalRequest)
-  }
-
   return {
     playlists,
     isLoading,
@@ -145,7 +104,6 @@ export const usePlaylistStorage = () => {
     getPlaylistById,
     hasPlaylists,
     getRecentPlaylists,
-    addSharedPlaylist, // New method for shared playlists
     isAdding: addPlaylistMutation.isPending,
     isRemoving: removePlaylistMutation.isPending,
   }
