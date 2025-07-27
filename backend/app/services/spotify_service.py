@@ -2,25 +2,58 @@
 
 import os
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 from typing import List, Dict, Any, Optional
 import random
 import http.client
 import json
 import urllib.parse
+import base64
 
 _reccobeats_final_audio_features_cache = {}
 
 class SpotifyService:
     def __init__(self):
-        """Initialize Spotify client with client credentials flow."""
+        """
+        Initializes Spotify client using OAuth for user-specific actions (playlist creation)
+        and handles ReccoBeats API calls.
+        """
         client_id = os.getenv("SPOTIFY_CLIENT_ID")
         client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-        client_credentials_manager = SpotifyClientCredentials(
+        redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI")
+        cache_path = os.getenv("SPOTIPY_CACHE_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".spotipy_cache.json"))
+
+        scopes = "playlist-modify-public ugc-image-upload user-read-private"
+
+        if not all([client_id, client_secret, redirect_uri]):
+            print("ERROR: SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, or SPOTIPY_REDIRECT_URI not set in .env.")
+            print("OAuth operations (like playlist creation) will not be available.")
+            self.sp = None
+            self.user_id = None
+            raise ValueError("Missing Spotify API credentials for OAuth. Please check your .env file.")
+        
+        self.auth_manager = SpotifyOAuth(
             client_id=client_id,
-            client_secret=client_secret
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+            scope=scopes,
+            cache_path=cache_path,
         )
-        self.sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+        
+        self.sp = spotipy.Spotify(auth_manager=self.auth_manager)
+        self.user_id = None
+
+        try:
+            current_user_profile = self.sp.current_user()
+            self.user_id = current_user_profile['id']
+            print(f"Successfully authenticated SpotifyService as user: {self.user_id}")
+        except Exception as e:
+            print(f"\n\n*** IMPORTANT: Spotify OAuth authentication failed or token not found/expired. ***")
+            print(f"Error: {e}")
+            print(f"Please run `python backend/test_spotify_auth_credentials.py` once to authenticate your Spotify account and get the initial token.")
+            print(f"Make sure SPOTIPY_CACHE_PATH is set correctly in your .env file (e.g., {cache_path}).")
+            print("*** Playlist creation will fail until authentication is complete. ***\n")
+            self.sp = None
 
     def _fetch_reccobeats_metadata_batch(self, spotify_ids: List[str]) -> Dict[str, Any]:
         """
@@ -71,7 +104,7 @@ class SpotifyService:
                             else:
                                 print(f"Warning: ReccoBeats metadata missing 'id' or 'href' for a track in batch {batch_spotify_ids}.")
                     else:
-                        print(f"ReccoBeats API Error: Unexpected response format for metadata batch {batch_spotify_ids}. Response: {data}")
+                        print(f"ReccoBeats API Error: Unexpected response format for metadata batch {batch_ids}. Response: {data}")
                 else:
                     print(f"ReccoBeats API Error for metadata batch {batch_ids}: Status {res.status}, Response: {data}")
             except json.JSONDecodeError as e:
@@ -100,9 +133,7 @@ class SpotifyService:
             conn.request("GET", full_path, '', headers)
             res = conn.getresponse()
             data = res.read().decode("utf-8")
-           
-            print(data)
-
+            
             if res.status == 200:
                 response_json = json.loads(data)
                 if isinstance(response_json, dict):
@@ -128,25 +159,43 @@ class SpotifyService:
         activity: str,
         vibe: str,
         duration_minutes: int = 30,
-        limit: int = 50
+        # Increased initial limit to fetch more tracks for better filtering
+        total_fetch_limit: int = 200 # New parameter for total tracks to fetch
     ) -> List[Dict[str, Any]]:
         """
         Search for tracks based on activity and vibe.
+        Fetches multiple batches of tracks from Spotify.
         """
         search_params = self._convert_to_search_params(activity, vibe)
         query = self._build_search_query(activity, search_params)
 
-        print(f"Spotify search query: '{query}', limit: {limit}")
-        results = self.sp.search(
-            q=query,
-            type='track',
-            limit=limit,
-            market='US'
-        )
-        tracks = results['tracks']['items']
-        print(f"Spotify search returned {len(tracks)} tracks.")
+        all_tracks = []
+        offset = 0
+        spotify_api_limit = 50 # Max limit per Spotify API search request
 
-        filtered_tracks = self._filter_by_audio_features(tracks, search_params)
+        print(f"Spotify search query: '{query}', attempting to fetch up to {total_fetch_limit} tracks.") # New log
+        while offset < total_fetch_limit:
+            results = self.sp.search(
+                q=query,
+                type='track',
+                limit=spotify_api_limit,
+                offset=offset,
+                market='US'
+            )
+            tracks_batch = results['tracks']['items']
+            if not tracks_batch:
+                break # No more tracks to fetch
+
+            all_tracks.extend(tracks_batch)
+            offset += spotify_api_limit
+
+            if len(all_tracks) >= total_fetch_limit:
+                break # Reached desired total limit
+
+        print(f"Spotify search returned {len(all_tracks)} total tracks across all requests.") # Modified log
+        tracks_to_filter = all_tracks[:total_fetch_limit] # Ensure we don't process more than needed
+
+        filtered_tracks = self._filter_by_audio_features(tracks_to_filter, search_params)
         print(f"After audio features filtering, {len(filtered_tracks)} tracks remain.")
 
         selected_tracks = self._select_tracks_for_duration(
@@ -154,13 +203,17 @@ class SpotifyService:
             duration_minutes
         )
         print(f"After duration selection, {len(selected_tracks)} tracks remain.")
-        return selected_tracks
+        
+        # New: Sort tracks for energy progression
+        final_sorted_tracks = self._sort_tracks_by_energy_progression(selected_tracks)
+        print(f"Final playlist has {len(final_sorted_tracks)} tracks after sorting by energy progression.")
+        return final_sorted_tracks
 
     def _convert_to_search_params(self, activity: str, vibe: str) -> Dict[str, Any]:
         """Convert user input to Spotify audio feature parameters."""
         vibe_mappings = {
             "chill": {
-                "tempo_range": (60, 100), "energy_range": (0.1, 0.6), "valence_range": (0.1, 0.8), "danceability_range": (0.1, 0.7)
+                "tempo_range": (60, 100), "energy_range": (0.1, 0.6), "valence_range": (0.2, 0.8), "danceability_range": (0.2, 0.7)
             },
             "upbeat": {
                 "tempo_range": (110, 180), "energy_range": (0.6, 1.0), "valence_range": (0.5, 1.0), "danceability_range": (0.5, 1.0)
@@ -177,7 +230,6 @@ class SpotifyService:
                 "valence_range": (0.7, 1.0),
                 "danceability_range": (0.7, 1.0)
             },
-            # Add specific mapping for 'dance pop' to ensure correct criteria are used
             "dance pop": {
                 "tempo_range": (115, 160),
                 "energy_range": (0.6, 1.0),
@@ -263,32 +315,26 @@ class SpotifyService:
         # Step 2: Fetch audio features for all available ReccoBeats IDs, prioritizing cache
         reccobeats_ids_to_fetch_audio_features = []
         for spotify_id, info in spotify_id_to_reccobeats_info_map.items():
-            if spotify_id not in _reccobeats_final_audio_features_cache and info.get('reccobeats_id'):
+            if info.get('reccobeats_id') not in _reccobeats_final_audio_features_cache and info.get('reccobeats_id'):
                 reccobeats_ids_to_fetch_audio_features.append(info['reccobeats_id'])
         print(f"Step 2: Will attempt to fetch audio features for {len(reccobeats_ids_to_fetch_audio_features)} new ReccoBeats IDs.")
 
         for reccobeats_id in reccobeats_ids_to_fetch_audio_features:
             self._fetch_reccobeats_audio_features_single(reccobeats_id) # This call populates the cache
 
-        for i, entry in enumerate(_reccobeats_final_audio_features_cache):
-            print(f"[{i}] {entry}")
 
         filtered_tracks = []
         for track in tracks:
-            try:
-                spotify_id = track.get('id')
-                if not spotify_id:
-                    continue
-                reccobeats_id = spotify_id_to_reccobeats_info_map.get(spotify_id)['reccobeats_id']
+            spotify_id = track.get('id')
+            if not spotify_id:
+                continue
 
-                if not _reccobeats_final_audio_features_cache.__contains__(reccobeats_id):
-                    continue
+            # Get the ReccoBeats ID associated with this Spotify ID to retrieve features from cache
+            reccobeats_info = spotify_id_to_reccobeats_info_map.get(spotify_id)
+            reccobeats_id = reccobeats_info.get('reccobeats_id') if reccobeats_info else None
 
-                features = _reccobeats_final_audio_features_cache.get(reccobeats_id)
-                print(f"{spotify_id} -  + {features}")
-            except Exception as e:
-                print(f"Error getting audio features from cache: {e}")
-
+            # Retrieve features using the ReccoBeats ID from the cache
+            features = _reccobeats_final_audio_features_cache.get(reccobeats_id)
 
             if features and self._matches_criteria(features, params):
                 track['audio_features'] = features
@@ -340,34 +386,160 @@ class SpotifyService:
         print(f"Finished duration selection. {len(selected_tracks)} tracks selected.")
         return selected_tracks
 
+    def _sort_tracks_by_energy_progression(self, tracks: List[Dict]) -> List[Dict]:
+        """
+        Sorts tracks to create a warm-up, peak, cool-down energy progression.
+        Assumes tracks have 'audio_features' with an 'energy' key.
+        """
+        if not tracks:
+            return []
+
+        # Filter out tracks without energy features, although they should all have it by this stage
+        tracks_with_energy = [t for t in tracks if t.get('audio_features') and 'energy' in t['audio_features']]
+        if not tracks_with_energy:
+            print("No tracks with energy features to sort for progression.")
+            return tracks # Return original tracks if sorting is not possible
+
+        # Sort all tracks by energy
+        tracks_with_energy.sort(key=lambda t: t['audio_features']['energy'])
+
+        total_tracks = len(tracks_with_energy)
+        warm_up_size = max(1, int(total_tracks * 0.2)) # ~20% for warm-up
+        cool_down_size = max(1, int(total_tracks * 0.2)) # ~20% for cool-down
+        
+        # Ensure cool_down_size doesn't overlap with warm_up_size too much if tracks are few
+        if warm_up_size + cool_down_size > total_tracks:
+            warm_up_size = int(total_tracks * 0.5)
+            cool_down_size = total_tracks - warm_up_size
+            if cool_down_size < 0: cool_down_size = 0 # Safety for very small lists
+
+
+        warm_up_tracks = tracks_with_energy[:warm_up_size]
+        # Middle tracks are for the peak
+        peak_tracks = tracks_with_energy[warm_up_size : total_tracks - cool_down_size]
+        cool_down_tracks = tracks_with_energy[total_tracks - cool_down_size:]
+
+        # Sort warm-up tracks by ascending energy (already sorted)
+        # Sort peak tracks by descending energy to get the highest first, then slightly lower within peak
+        peak_tracks.sort(key=lambda t: t['audio_features']['energy'], reverse=True)
+        # Sort cool-down tracks by descending energy to go from higher to lower
+        cool_down_tracks.sort(key=lambda t: t['audio_features']['energy'], reverse=True)
+
+
+        # For a smooth progression, a better approach for peak and cool-down:
+        # Peak: Take a central portion of high-energy tracks.
+        # Cool-down: Take the highest remaining energy tracks and sort them descending.
+
+        # A simpler ramp-up, peak, ramp-down:
+        # Warm-up: lowest energy tracks (already sorted ascending)
+        # Peak: Remaining tracks sorted by descending energy (to have highest in middle)
+        # Cool-down: last few tracks of the lowest energy (or highest energy in reverse)
+        # Let's try this pattern: warm-up, then main body with some variation, then cool-down
+        
+        # A more common approach for warm-up/cool-down is a parabolic shape:
+        # Sort all by energy.
+        # Take first N for warm up (ascending).
+        # Take last N for cool down (descending).
+        # Remaining middle tracks can be shuffled or sorted based on preference.
+
+        # Let's do a simple ascending for warm-up, then high for main, then descending for cool-down
+        sorted_tracks = []
+
+        # Warm-up (lowest energy)
+        sorted_tracks.extend(warm_up_tracks)
+
+        # Peak (highest energy tracks from the middle portion)
+        # For simplicity, we can shuffle the peak tracks to avoid strict monotonic decrease
+        # or sort by descending and then just pick some.
+        # Let's try shuffling the peak to make it less predictable but generally high energy.
+        random.shuffle(peak_tracks)
+        sorted_tracks.extend(peak_tracks)
+
+        # Cool-down (remaining tracks, sorted by descending energy for a smooth fade)
+        sorted_tracks.extend(cool_down_tracks)
+
+        print(f"Sorted tracks into warm-up ({len(warm_up_tracks)}), peak ({len(peak_tracks)}), cool-down ({len(cool_down_tracks)}) phases.")
+        return sorted_tracks
+
+
     def create_playlist(
         self,
-        user_id: str,
         name: str,
         description: str,
-        track_uris: List[str]
+        track_uris: List[str],
+        image_path: Optional[str] = None # New parameter for image path
     ) -> Optional[Dict[str, Any]]:
         """
-        Create a public playlist and add tracks.
+        Creates a public playlist on the authenticated Spotify account, adds tracks,
+        and optionally uploads a cover image.
         """
+        if not self.sp or not self.user_id:
+            print("Spotify client not authenticated or user ID not available. Cannot create playlist.")
+            return None
+
         try:
+            print(f"Attempting to create playlist '{name}' for user {self.user_id}...")
             playlist = self.sp.user_playlist_create(
-                user=user_id,
+                user=self.user_id,
                 name=name,
                 public=True,
                 description=description
             )
+            print(f"Playlist '{playlist['name']}' created with ID: {playlist['id']}")
+
             if track_uris:
-                self.sp.playlist_add_items(
-                    playlist_id=playlist['id'],
-                    items=track_uris
-                )
+                print(f"Adding {len(track_uris)} tracks to playlist {playlist['id']}...")
+                for i in range(0, len(track_uris), 100):
+                    self.sp.playlist_add_items(
+                        playlist_id=playlist['id'],
+                        items=track_uris[i:i+100]
+                    )
+                print(f"Successfully added {len(track_uris)} tracks.")
+
+            image_url_result = None
+            if image_path and os.path.exists(image_path):
+                try:
+                    with open(image_path, 'rb') as img_file:
+                        image_data = img_file.read()
+                    
+                    image_data_base64 = base64.b64encode(image_data).decode('utf-8')
+                    
+                    print(f"Uploading cover image for playlist {playlist['id']} from {image_path}...")
+                    self.sp.playlist_upload_cover_image(playlist['id'], image_data_base64)
+                    print("Playlist cover image uploaded successfully!")
+                    
+                    updated_playlist = self.sp.playlist(playlist['id'], fields='images')
+                    if updated_playlist and updated_playlist.get('images'):
+                        image_url_result = updated_playlist['images'][0].get('url')
+                    else:
+                        print("Warning: Could not retrieve uploaded image URL from Spotify after upload.")
+
+                except FileNotFoundError:
+                    print(f"Warning: Image file not found at {image_path}. Skipping image upload.")
+                except spotipy.exceptions.SpotifyException as e:
+                    print(f"Spotify API Error uploading image: Status {e.http_status}, Code {e.code}, Message: {e.msg}")
+                    print("HINT: Ensure the image is a JPEG and its size does not exceed 256KB and 'ugc-image-upload' scope is granted.")
+                except Exception as e:
+                    print(f"An unexpected error occurred during image upload: {e}")
+            elif image_path:
+                print(f"Warning: Image path '{image_path}' provided but file does not exist. Skipping image upload.")
+
+
             return {
                 "playlist_id": playlist['id'],
                 "playlist_url": playlist['external_urls']['spotify'],
                 "name": playlist['name'],
-                "track_count": len(track_uris)
+                "description": playlist['description'],
+                "track_count": len(track_uris),
+                "image_url": image_url_result
             }
+        except spotipy.exceptions.SpotifyException as e:
+            print(f"Spotify API Error creating playlist: Status {e.http_status}, Code {e.code}, Message: {e.msg}")
+            if e.http_status == 401:
+                print("HINT: 401 Unauthorized. Your Spotify OAuth token might be expired or invalid. Try re-running the authentication script.")
+            elif e.http_status == 403:
+                print("HINT: 403 Forbidden. You might not have the required scopes (e.g., 'playlist-modify-public', 'ugc-image-upload'). Re-authenticate with correct scopes.")
+            return None
         except Exception as e:
             print(f"Error creating playlist: {e}")
             return None
@@ -378,12 +550,19 @@ def create_activity_playlist(activity: str, vibe: str, duration: int = 30):
     """
     spotify_service = SpotifyService()
 
+    if not spotify_service.sp:
+        return {"error": "Spotify service not authenticated. Cannot create playlist."}
+
+
     print("Attempting to create playlist...")
 
+    # Pass total_fetch_limit to fetch more tracks initially
+    # Increased total_fetch_limit to 200, can adjust further if needed
     tracks = spotify_service.search_tracks_by_criteria(
         activity=activity,
         vibe=vibe,
-        duration_minutes=duration
+        duration_minutes=duration,
+        total_fetch_limit=400 # Fetch up to 200 tracks initially
     )
 
     if not tracks:
@@ -402,13 +581,19 @@ def create_activity_playlist(activity: str, vibe: str, duration: int = 30):
         preview_url = track.get('preview_url')
         duration_ms = track.get('duration_ms')
 
+        album_data = track.get('album', {})
+        album_name = album_data.get('name', "Unknown Album")
+        album_image_url = album_data.get('images', [{}])[0].get('url') if album_data.get('images') and len(album_data['images']) > 0 else None
+
         if all([track_name, artist_name != "Unknown Artist", spotify_url, duration_ms is not None]):
             returned_tracks.append({
+                "id": track_id,
                 "name": track_name,
                 "artist": artist_name,
-                "spotify_url": spotify_url,
-                "preview_url": preview_url,
-                "duration_ms": duration_ms
+                "album": {"name": album_name, "images": [{"url": album_image_url}] if album_image_url else []},
+                "duration": duration_ms,
+                "spotifyUrl": spotify_url,
+                "previewUrl": preview_url
             })
         else:
             print(f"Skipping track due to missing essential data for final response: ID={track.get('id')}, Name={track.get('name')}")
@@ -418,7 +603,25 @@ def create_activity_playlist(activity: str, vibe: str, duration: int = 30):
         return {"error": "No suitable tracks with complete data found"}
 
     try:
-        total_duration_minutes_calculated = sum(t.get('duration_ms', 0) for t in returned_tracks) / (1000 * 60)
+        total_duration_minutes_calculated = sum(t.get('duration', 0) for t in returned_tracks) / (1000 * 60)
+
+        playlist_name = f"{vibe.capitalize()} {activity.capitalize()}"
+        playlist_description = f"A {vibe} playlist for your {activity} session, approximately {int(total_duration_minutes_calculated)} minutes long."
+        track_uris_for_spotify = [t['spotifyUrl'] for t in returned_tracks]
+
+        # Corrected path for default playlist cover image: go up two levels from 'services' to 'backend'
+        default_playlist_cover_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "default_playlist_cover.jpg")
+        
+        playlist_creation_result = spotify_service.create_playlist(
+            name=playlist_name,
+            description=playlist_description,
+            track_uris=track_uris_for_spotify,
+            image_path=default_playlist_cover_path
+        )
+
+        if not playlist_creation_result:
+            print("Failed to create Spotify playlist. Check logs for Spotify API errors.")
+            return {"error": "Failed to create playlist on Spotify."}
 
         return {
             "tracks": returned_tracks,
@@ -427,8 +630,13 @@ def create_activity_playlist(activity: str, vibe: str, duration: int = 30):
                 "activity": activity,
                 "vibe": vibe,
                 "target_duration": duration
-            }
+            },
+            "playlist_id": playlist_creation_result['playlist_id'],
+            "playlist_url": playlist_creation_result['playlist_url'],
+            "playlist_name": playlist_creation_result['name'],
+            "playlist_description": playlist_creation_result['description'],
+            "playlist_image_url": playlist_creation_result.get('image_url', "https://via.placeholder.com/300x300.png?text=Playlist+Image")
         }
     except Exception as e:
-        print(f"CRITICAL ERROR during final playlist response construction: {e}")
+        print(f"CRITICAL ERROR during final playlist response construction/creation: {e}")
         raise
