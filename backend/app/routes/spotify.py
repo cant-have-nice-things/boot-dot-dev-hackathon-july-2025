@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from app.services.spotify_service import SpotifyService, create_activity_playlist
 
-router = APIRouter(prefix="/spotify", tags=["spotify"])
+router = APIRouter()
+#router = APIRouter(prefix="/spotify", tags=["spotify"])
 
 class PlaylistRequest(BaseModel):
     activity: str = Field(..., description="The activity (e.g., yoga, studying, cleaning)")
