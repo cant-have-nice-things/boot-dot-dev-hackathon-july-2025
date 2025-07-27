@@ -1,55 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Music } from 'lucide-react'
-import { useGeneratePlaylist } from '@/hooks/api/usePlaylist'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Link } from '@tanstack/react-router'
+import { PlaylistGeneratorForm } from '@/components/PlaylistGeneratorForm'
+import { PlaylistSummaryCard } from '@/components/PlaylistSummaryCard'
+import { usePlaylistStorage } from '@/hooks/usePlaylistStorage'
 
 export const Route = createFileRoute('/')({
   component: Index,
 })
 
-// Type definitions for our form data
-interface PlaylistFormData {
-  activity: string
-  duration: number
-  vibe: string
-}
-
 function Index() {
-  const generatePlaylistMutation = useGeneratePlaylist()
-
-  const form = useForm({
-    defaultValues: {
-      activity: '',
-      duration: 30,
-      vibe: 'chill',
-    } as PlaylistFormData,
-    onSubmit: async ({ value }) => {
-      try {
-        const result = await generatePlaylistMutation.mutateAsync(value)
-
-        // Success! Show the result or redirect to playlist view
-        alert(
-          `Playlist "${result.name}" created successfully!\nTracks: ${result.tracks.length}\nSpotify URL: ${result.spotifyUrl}`
-        )
-
-        // TODO: Later we can navigate to a playlist details page or show a success modal
-        // navigate({ to: `/playlist/${result.id}` })
-      } catch (error) {
-        // Error handling is done in the mutation's onError callback
-        // but you can also handle it here if needed
-        console.error('Form submission error:', error)
-      }
-    },
-  })
+  const { removePlaylist, getRecentPlaylists, hasPlaylists } = usePlaylistStorage()
+  const recentPlaylists = getRecentPlaylists(3)
 
   return (
     <div className="container mx-auto px-4 py-16">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Hero Section */}
         <div className="text-center space-y-6 mb-12">
           <div className="flex justify-center">
@@ -74,151 +42,51 @@ function Index() {
           </p>
         </div>
 
-        {/* Playlist Generation Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Your Playlist</CardTitle>
-            <CardDescription>
-              Just fill in a few details and we'll curate the perfect soundtrack for your activity.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={e => {
-                e.preventDefault()
-                e.stopPropagation()
-                void form.handleSubmit()
-              }}
-              className="space-y-6"
-            >
-              {/* Activity Input */}
-              <form.Field
-                name="activity"
-                validators={{
-                  onChange: ({ value }) => (!value?.trim() ? 'Activity is required' : undefined),
-                }}
-              >
-                {field => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>What are you doing?</Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={e => field.handleChange(e.target.value)}
-                      placeholder="e.g., yoga, studying, cleaning, cooking..."
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Form */}
+          <div className="lg:col-span-2">
+            <PlaylistGeneratorForm />
+          </div>
+
+          {/* Right Column: Recent Playlists */}
+          <div className="space-y-6">
+            {hasPlaylists && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Your Recent Playlists</CardTitle>
+                  <CardDescription>Your recently generated playlists</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {recentPlaylists.map(playlist => (
+                    <PlaylistSummaryCard
+                      key={playlist.id}
+                      playlist={playlist}
+                      onRemove={removePlaylist}
+                      showRemoveButton={true}
                     />
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-                    )}
-                  </div>
-                )}
-              </form.Field>
+                  ))}
 
-              {/* Duration Slider */}
-              <form.Field
-                name="duration"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!value || value < 5) return 'Duration must be at least 5 minutes'
-                    if (value > 300) return 'Duration cannot exceed 300 minutes'
-                    return undefined
-                  },
-                }}
-              >
-                {field => (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={field.name}>How long?</Label>
-                      <span className="text-sm text-muted-foreground">
-                        {field.state.value} minutes
-                      </span>
-                    </div>
-                    <Slider
-                      id={field.name}
-                      min={5}
-                      max={300}
-                      step={5}
-                      value={[field.state.value]}
-                      onValueChange={value => field.handleChange(value[0])}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>5 min</span>
-                      <span>300 min</span>
-                    </div>
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-                    )}
-                  </div>
-                )}
-              </form.Field>
+                  <Link to="/playlists" className="block">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View All Playlists ({recentPlaylists.length}+)
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
 
-              {/* Vibe Selection */}
-              <form.Field
-                name="vibe"
-                validators={{
-                  onChange: ({ value }) => (!value ? 'Please select a vibe' : undefined),
-                }}
-              >
-                {field => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>What's the vibe?</Label>
-                    <select
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={e => field.handleChange(e.target.value)}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="chill">Chill</option>
-                      <option value="upbeat">Upbeat</option>
-                      <option value="focus">Focus</option>
-                      <option value="energetic">Energetic</option>
-                      <option value="mellow">Mellow</option>
-                      <option value="ambient">Ambient</option>
-                    </select>
-                    {field.state.meta.errors.length > 0 && (
-                      <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              {/* Submit Button */}
-              <form.Subscribe selector={state => [state.canSubmit, state.isSubmitting]}>
-                {([canSubmit, isSubmitting]) => (
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={!canSubmit || generatePlaylistMutation.isPending}
-                  >
-                    {generatePlaylistMutation.isPending || isSubmitting
-                      ? 'Generating Your Playlist...'
-                      : 'Generate Playlist'}
-                  </Button>
-                )}
-              </form.Subscribe>
-
-              {/* Error Display */}
-              {generatePlaylistMutation.isError && (
-                <div className="text-sm text-destructive text-center">
-                  {generatePlaylistMutation.error?.message ||
-                    'Failed to generate playlist. Please try again.'}
+            {/* Info Card */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>🎵 Your playlists are saved locally on this device</p>
+                  <p>🔗 Share playlist links to sync across devices</p>
+                  <p>✨ Each playlist is crafted based on your activity and vibe</p>
                 </div>
-              )}
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Additional Info */}
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>
-            Your playlist will be created and saved to your Spotify account. We'll use your
-            preferences to find the perfect songs for your activity.
-          </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
