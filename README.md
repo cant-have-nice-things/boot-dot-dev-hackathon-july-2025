@@ -1,8 +1,16 @@
 # NiceThings
 
-**Visit our website: [nicethings.wtf](https://nicethings.wtf)**
+You’ve got great taste in music. Spotify knows it. Its algorithms have mapped every song you’ve loved, skipped, or looped. But here’s the truth: preference isn’t the same as purpose.
 
-NiceThings is a full-stack application that generates personalized Spotify playlists based on your activity and desired vibe. Whether you're coding, working out, or just relaxing, NiceThings creates the perfect soundtrack for your moment.
+A playlist of your favorite tracks doesn’t mean it’ll carry you through a 45-minute workout or a deep-focus study session. That’s not what algorithms are built for. They optimize for what you like — not how you want to feel.
+
+Nice Things changes that.
+
+We build playlists with intention. Inspired by the structure of DJ sets and film scores, each mix is crafted to follow a natural arc: easing you in, building energy, peaking at the perfect moment, then cooling down. We use detailed audio analysis — tempo, energy, mood, and more — to guide every phase.
+
+You pick the activity, vibe, and duration. We generate a fresh, purpose-built playlist every time. No account. No shuffle chaos. No repeats.
+
+**Visit our website: [nicethings.wtf](https://nicethings.wtf)**
 
 ## 🚀 Getting Started
 
