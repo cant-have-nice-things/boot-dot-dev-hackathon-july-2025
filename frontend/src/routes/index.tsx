@@ -67,10 +67,13 @@ function Index() {
                   ))}
 
                   <Link to="/playlists" className="block">
-                    <Button variant="outline" size="sm" className="w-full">
-                      View All Playlists ({recentPlaylists.length}+)
-                    </Button>
-                  </Link>
+                      <Button
+                        size="sm"
+                        className="w-full bg-[#00378b] text-white hover:bg-[#002e73]"
+                      >
+                        View All Playlists ({recentPlaylists.length}+)
+                      </Button>
+                    </Link>
                 </CardContent>
               </Card>
             )}
