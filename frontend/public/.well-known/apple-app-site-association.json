@@ -1,0 +1,14 @@
+{
+  "webcredentials": {
+    "apps": ["https://nicethings.wtf"]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "https://nicethings.wtf",
+        "paths": ["/playlists/*", "/playlist/*"]
+      }
+    ]
+  }
+}

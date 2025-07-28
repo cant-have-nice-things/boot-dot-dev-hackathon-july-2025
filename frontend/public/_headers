@@ -1,0 +1,19 @@
+# Universal Links for PWA
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+
+/.well-known/*
+  X-Content-Type-Options: nosniff
+  Content-Type: application/json
+
+# PWA specific headers
+/manifest.json
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400
+
+# Service worker
+/sw.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache

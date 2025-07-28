@@ -26,7 +26,16 @@ export default defineConfig({
         theme_color: '#1db954',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        scope: "/",
+        start_url: "/",
+        id: "/",
+        shortcuts: [
+          {
+            name: "Open Playlist",
+            url: "/playlists/",
+            icons: [{ src: "/icon-192.png", sizes: "192x192" }]
+          }
+        ],
         icons: [
           {
             src: '/icon-192.png',

@@ -1,0 +1,6 @@
+# Handle deep links - redirect app routes to index.html for PWA
+/playlists/* /index.html 200
+/playlist/* /index.html 200
+
+# Well-known files should be served directly
+/.well-known/* /.well-known/:splat 200
