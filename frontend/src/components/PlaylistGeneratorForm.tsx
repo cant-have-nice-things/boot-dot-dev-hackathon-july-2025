@@ -94,24 +94,48 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
 
           {/* Duration Slider */}
           <form.Field name="duration">
-            {field => (
-              <div className="space-y-3">
-                <Label htmlFor={field.name}>Duration: {field.state.value} minutes</Label>
-                <Slider
-                  id={field.name}
-                  min={10}
-                  max={1440}
-                  step={5}
-                  value={[field.state.value]}
-                  onValueChange={values => field.handleChange(values[0])}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>10 min</span>
-                  <span>3 hours</span>
+            {field => {
+              const formatTime = (min) => {
+                if (min < 60) return `${min} min`;
+                const h = Math.floor(min / 60);
+                const m = min % 60;
+                return m === 0 ? `${h}h` : `${h}h ${m}min`;
+              };
+
+              // Convert slider position to actual minutes using log scale
+              const positionToMinutes = (position) => {
+                // Log scale from 10 to 1440 minutes
+                const minLog = Math.log(10);
+                const maxLog = Math.log(1440);
+                const scale = (maxLog - minLog) / 100;
+                return Math.round(Math.exp(minLog + scale * position) / 5) * 5; // Round to nearest 5
+              };
+
+              // Convert minutes back to slider position
+              const minutesToPosition = (minutes) => {
+                const minLog = Math.log(10);
+                const maxLog = Math.log(1440);
+                const scale = (maxLog - minLog) / 100;
+                return (Math.log(minutes) - minLog) / scale;
+              };
+
+              return (
+                <div className="space-y-3">
+                  <Label htmlFor={field.name}>
+                    How long will you be doing it? ~ {formatTime(field.state.value)}
+                  </Label>
+                  <Slider
+                    id={field.name}
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[minutesToPosition(field.state.value)]}
+                    onValueChange={values => field.handleChange(positionToMinutes(values[0]))}
+                    className="w-full"
+                  />
                 </div>
-              </div>
-            )}
+              );
+            }}
           </form.Field>
 
           {/* Vibe Selection */}
