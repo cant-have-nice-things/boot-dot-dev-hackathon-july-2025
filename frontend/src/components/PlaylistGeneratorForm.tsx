@@ -54,7 +54,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
       <CardHeader>
         <CardTitle>Create Your Playlist</CardTitle>
         <CardDescription>
-          Just fill in a few details and we'll curate the perfect soundtrack for your activity.
+        Tell us what you're up to, how long you're doing it, and the vibe you're feeling. Finally pick your favorite music style.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -75,14 +75,14 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
           >
             {field => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>What are you doing?</Label>
+                <Label htmlFor={field.name}>What activity are you doing & the type of music?</Label>
                 <Input
                   id={field.name}
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
-                  placeholder="e.g., yoga, studying, cleaning, working out..."
+                  placeholder="eg.. running with eletronic, coding with classical, cooking with EDM."
                   className="w-full"
                 />
                 {field.state.meta.errors.length > 0 && (
@@ -100,7 +100,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
                 <Slider
                   id={field.name}
                   min={10}
-                  max={180}
+                  max={1440}
                   step={5}
                   value={[field.state.value]}
                   onValueChange={values => field.handleChange(values[0])}

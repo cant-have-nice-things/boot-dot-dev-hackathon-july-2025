@@ -33,12 +33,12 @@ function Index() {
                 color: 'transparent',
               }}
             >
-              Nice Things
+              Fresh perfectly timed Spotify playlists - to match your moment.
             </span>
           </h1>
           <p className="text-xl leading-8 text-muted-foreground max-w-lg mx-auto">
-            Tell us what you're doing, how long you'll be doing it, and what vibe you want. We'll
-            create the perfect Spotify playlist for you.
+          Tell us what you're up to, how long you're doing it, and the vibe you're feeling.
+          Finally pick your favorite music style.
           </p>
         </div>
 
