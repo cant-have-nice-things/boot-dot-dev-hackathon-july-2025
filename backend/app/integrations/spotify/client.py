@@ -4,7 +4,7 @@ import os
 from typing import Any
 
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 
 from .config import SpotifyConfig
 
@@ -21,21 +21,27 @@ class SpotifyClient:
         self.config = config
         self.sp: spotipy.Spotify | None = None
         self.user_id: str | None = None
-        self.auth_manager: SpotifyClientCredentials | None = None
+        self.auth_manager: SpotifyOAuth | None = None
 
     async def connect(self) -> bool:
         """Initialize Spotify connection and authenticate."""
         try:
-            self.auth_manager = SpotifyClientCredentials(
+            self.auth_manager = SpotifyOAuth(
                 client_id=self.config.client_id,
                 client_secret=self.config.client_secret,
+                redirect_uri=self.config.redirect_uri,
+                scope=self.config.scopes,
+                cache_path=self.config.cache_path,
             )
 
             self.sp = spotipy.Spotify(auth_manager=self.auth_manager)
-            self.user_id = "me"  # Not a real user, but needed for some calls
+
+            # Get current user
+            current_user_profile = self.sp.current_user()
+            self.user_id = current_user_profile["id"]
 
             logger.info(
-                f"Successfully authenticated Spotify client with client credentials"
+                f"Successfully authenticated Spotify client for user: {self.user_id}"
             )
             return True
 
