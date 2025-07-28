@@ -69,13 +69,19 @@ export const PlaylistSummaryCard = ({
         <CardContent className="pt-0">
           <div className="space-y-3">
             {/* Activity and Vibe Badges */}
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="text-xs">
-                <Music className="w-3 h-3 mr-1" />
-                {playlist.activity}
-              </Badge>
-              <Badge className={`text-xs ${getVibeColor(playlist.vibe)}`}>{playlist.vibe}</Badge>
-            </div>
+            {(playlist.activity || playlist.vibe) && (
+                <div className="flex flex-wrap gap-2">
+                    {playlist.activity && (
+                        <Badge variant="secondary" className="text-xs">
+                            <Music className="w-3 h-3 mr-1"/>
+                            {playlist.activity}
+                        </Badge>
+                    )}
+                    {playlist.vibe && (
+                        <Badge className={`text-xs ${getVibeColor(playlist.vibe)}`}>{playlist.vibe}</Badge>
+                    )}
+                </div>
+            )}
 
             {/* Duration and Track Count */}
             <div className="flex items-center justify-between text-sm text-muted-foreground">

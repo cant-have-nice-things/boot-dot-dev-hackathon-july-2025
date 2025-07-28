@@ -17,12 +17,13 @@ function PlaylistsIndex() {
   const [searchTerm, setSearchTerm] = useState('')
 
   // Filter playlists based on search term
-  const filteredPlaylists = playlists.filter(
-    playlist =>
-      playlist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      playlist.activity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      playlist.vibe.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredPlaylists = playlists.filter(playlist => {
+    const term = searchTerm.toLowerCase();
+    const nameMatch = playlist.name.toLowerCase().includes(term);
+    const activityMatch = playlist.activity?.toLowerCase().includes(term) || false;
+    const vibeMatch = playlist.vibe?.toLowerCase().includes(term) || false;
+    return nameMatch || activityMatch || vibeMatch;
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">

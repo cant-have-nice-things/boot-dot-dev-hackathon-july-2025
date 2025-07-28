@@ -8,6 +8,7 @@ import { ShareDialog } from '@/components/ShareDialog'
 import { usePlaylistStorage } from '@/hooks/usePlaylistStorage'
 import { useGetPlaylist } from '@/hooks/api/usePlaylist'
 import { useEffect } from 'react'
+import { getVibeColor } from '@/lib/constants'
 
 export const Route = createFileRoute('/playlists/$playlistId')({
   component: PlaylistDetail,
@@ -89,18 +90,6 @@ function PlaylistDetail() {
           </div>
         </div>
     )
-  }
-
-  const getVibeColor = (vibe: string) => {
-    const colors: Record<string, string> = {
-      chill: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      upbeat: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      focus: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      energetic: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      mellow: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      ambient: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-    }
-    return colors[vibe.toLowerCase()] || colors.chill
   }
 
   // SIMPLIFIED: No need for type checking or fallbacks - activity and vibe are always present

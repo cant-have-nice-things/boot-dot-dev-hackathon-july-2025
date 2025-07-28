@@ -31,10 +31,22 @@ class SpotifyClient:
                 client_secret=self.config.client_secret,
                 redirect_uri=self.config.redirect_uri,
                 scope=self.config.scopes,
-                cache_path=self.config.cache_path,
             )
-
             self.sp = spotipy.Spotify(auth_manager=self.auth_manager)
+            token_info = self.auth_manager.get_cached_token()
+            if not token_info:
+                # No token, need to authorize
+                # In a web app, you'd redirect the user to self.auth_manager.get_authorize_url()
+                # For a backend service, we assume the token is cached after initial auth
+                logger.warning("No cached Spotify token found. Please run initial auth.")
+                return False
+
+            if self.auth_manager.is_token_expired(token_info):
+                logger.info("Spotify token expired, refreshing...")
+                token_info = self.auth_manager.refresh_access_token(token_info['refresh_token'])
+                # spotipy's auth_manager should handle caching the new token automatically
+
+            self.sp = spotipy.Spotify(auth=token_info['access_token'])
 
             # Get current user
             current_user_profile = self.sp.current_user()
@@ -47,6 +59,10 @@ class SpotifyClient:
 
         except Exception as e:
             logger.error(f"Failed to connect to Spotify: {e}")
+            # Attempt to remove the cache and re-authenticate
+            if os.path.exists(self.config.cache_path):
+                os.remove(self.config.cache_path)
+                logger.info("Removed corrupted Spotify cache file. Please restart to re-authenticate.")
             self.sp = None
             self.user_id = None
             return False
