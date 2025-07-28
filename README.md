@@ -1,6 +1,6 @@
 # NiceThings
 
-**Visit our website: [nicethings.xyz](https://nicethings.wtf)**
+**Visit our website: [nicethings.wtf](https://nicethings.wtf)**
 
 NiceThings is a full-stack application that generates personalized Spotify playlists based on your activity and desired vibe. Whether you're coding, working out, or just relaxing, NiceThings creates the perfect soundtrack for your moment.
 
