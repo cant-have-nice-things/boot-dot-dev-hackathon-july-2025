@@ -597,6 +597,8 @@ class PlaylistService:
                     updated_playlist = self.spotify_client.get_playlist(playlist_id)
                     if updated_playlist and updated_playlist.get("images"):
                         return updated_playlist["images"][0].get("url")
+            else:
+                logger.error("Failed to generate playlist image.")
         except Exception as e:
             logger.error(f"Error updating playlist cover image: {e}")
         return None
