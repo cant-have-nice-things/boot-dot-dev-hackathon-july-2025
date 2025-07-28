@@ -22,7 +22,10 @@ class GeminiClient:
         prompt = f"Create a playlist cover for a playlist called '{playlist_name}'. The playlist is described as: '{playlist_description}'. The image should be square and visually appealing."
 
         response = self.model.generate_content(
-            contents=prompt
+            contents=prompt,
+            generation_config=types.GenerationConfig(
+              response_modalities=['TEXT', 'IMAGE']
+            )
         )
 
         if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
