@@ -20,8 +20,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
       },
       manifest: {
-        name: 'Playlist Generator',
-        short_name: 'PlaylistGen',
+        name: 'Nice Things',
+        short_name: 'NiceThings',
         description: 'Generate Spotify playlists for any activity and vibe',
         theme_color: '#1db954',
         background_color: '#ffffff',

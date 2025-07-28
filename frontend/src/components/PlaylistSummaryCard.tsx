@@ -91,25 +91,26 @@ export const PlaylistSummaryCard = ({
 
             {/* Action Buttons */}
             <div className="flex gap-2">
-              <Link
-                  to="/playlists/$playlistId"
-                  params={{ playlistId: playlist.id }}
-                  className="flex-1"
-              >
-                <Button variant="outline" size="sm" className="w-full">
+              {/* View Details — now white outline */}
+              <Link to={`/playlists/${playlist.id}`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                >
                   View Details
                 </Button>
               </Link>
+
+              {/* Open in Spotify — now blue */}
               <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={e => {
-                    e.preventDefault()
-                    window.open(playlist.spotifyUrl, '_blank')
-                  }}
-                  className="px-3"
+                size="sm"
+                className="bg-[#00378b] text-white hover:bg-[#002e73]"
+                onClick={e => {
+                  e.preventDefault()
+                  window.open(playlist.spotifyUrl, '_blank')
+                }}
               >
-                <ExternalLink className="w-4 h-4" />
+                Open in Spotify
               </Button>
             </div>
           </div>

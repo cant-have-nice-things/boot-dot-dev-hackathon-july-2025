@@ -52,7 +52,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
   return (
     <Card>
       <CardHeader>
-        <CardTitle>We’ll build a custom playlist that flows effortlessly from start to finish</CardTitle>
+      <CardTitle className="text-xl font-semibold max-w-prose leading-snug">We’ll build a custom playlist that flows effortlessly from start to finish</CardTitle>
         <CardDescription>
         No repeats, no vibe-killers, just pure momentum.
           
@@ -83,7 +83,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
-                  placeholder="eg.. running with eletronic, coding with classical, cooking with EDM."
+                  placeholder="eg.. running with eletronic, coding with classical etc."
                   className="w-full"
                 />
                 {field.state.meta.errors.length > 0 && (
@@ -179,12 +179,12 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
             {([canSubmit, isSubmitting]) => (
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-[#00378b] text-white hover:bg-[#002e73]"
                 disabled={!canSubmit || generatePlaylistMutation.isPending}
               >
                 {generatePlaylistMutation.isPending || isSubmitting
                   ? 'Generating Your Playlist...'
-                  : 'Generate Playlist ------>'}
+                  : 'Generate Playlist'}
               </Button>
             )}
           </form.Subscribe>
