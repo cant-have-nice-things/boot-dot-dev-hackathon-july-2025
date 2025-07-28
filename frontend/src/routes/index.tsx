@@ -33,12 +33,11 @@ function Index() {
                 color: 'transparent',
               }}
             >
-              Fresh perfectly timed Spotify playlists - to match your moment.
+              Fresh, perfectly timed Spotify playlists — made to match your moment.
             </span>
           </h1>
           <p className="text-xl leading-8 text-muted-foreground max-w-lg mx-auto">
-          Tell us what you're up to, how long you're doing it, and the vibe you're feeling.
-          Finally pick your favorite music style.
+          Just tell us what you’re doing, the kind of music you like, how long you’ll be at it, and the vibe you’re going for.
           </p>
         </div>
 

@@ -52,9 +52,10 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Your Playlist</CardTitle>
+        <CardTitle>We’ll build a custom playlist that flows effortlessly from start to finish</CardTitle>
         <CardDescription>
-        Tell us what you're up to, how long you're doing it, and the vibe you're feeling. Finally pick your favorite music style.
+        No repeats, no vibe-killers, just pure momentum.
+          
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -179,7 +180,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
               >
                 {generatePlaylistMutation.isPending || isSubmitting
                   ? 'Generating Your Playlist...'
-                  : 'Generate Playlist'}
+                  : 'Generate Playlist ------>'}
               </Button>
             )}
           </form.Subscribe>
