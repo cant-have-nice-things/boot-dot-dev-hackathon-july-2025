@@ -13,7 +13,7 @@ class GeminiClient:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
+        self.client = genai.Client()
 
     def generate_playlist_image(self, playlist_name: str, playlist_description: str) -> bytes | None:
         """
@@ -21,9 +21,10 @@ class GeminiClient:
         """
         prompt = f"Create a playlist cover for a playlist called '{playlist_name}'. The playlist is described as: '{playlist_description}'. The image should be square and visually appealing."
 
-        response = self.model.generate_content(
+        response = self.client.models.generate_content(
+            model="gemini-2.0-flash-preview-image-generation",
             contents=prompt,
-            generation_config=types.GenerationConfig(
+            config=types.GenerateContentConfig(
               response_modalities=['TEXT', 'IMAGE']
             )
         )
