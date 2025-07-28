@@ -172,33 +172,139 @@ class PlaylistService:
         """Generate search queries based on activity and vibe."""
         # Activity-based terms
         activity_terms = {
-            "yoga": ["meditation", "zen", "relaxing", "peaceful", "ambient"],
-            "studying": [
-                "focus",
-                "concentration",
-                "instrumental",
-                "ambient",
-                "classical",
-            ],
-            "cleaning": ["energetic", "upbeat", "motivational", "pop", "dance"],
-            "cooking": ["upbeat", "fun", "energetic", "happy", "pop"],
-            "working out": [
-                "energetic",
-                "pump up",
-                "workout",
-                "fitness",
-                "high energy",
-            ],
-            "running": ["running", "cardio", "high energy", "motivational", "upbeat"],
-            "relaxing": ["chill", "ambient", "peaceful", "calm", "meditation"],
+            # Exercise & Fitness
+            "yoga": ["yoga", "yoga music", "yoga class", "yoga flow"],
+            "pilates": ["pilates", "pilates music", "pilates class"],
+            "running": ["running", "jogging", "cardio", "marathon", "5k", "10k"],
+            "walking": ["walking", "stroll", "walk", "hiking"],
+            "hiking": ["hiking", "trail", "outdoor", "nature walk"],
+            "cycling": ["cycling", "biking", "bike ride", "spinning"],
+            "swimming": ["swimming", "pool", "lap swimming", "water workout"],
+            "working out": ["workout", "gym", "fitness", "training", "exercise"],
+            "weightlifting": ["weightlifting", "lifting", "strength training", "bodybuilding"],
+            "crossfit": ["crossfit", "cross training", "functional fitness"],
+            "boxing": ["boxing", "kickboxing", "martial arts", "combat sports"],
+            "dancing": ["dancing", "dance", "choreography", "dance class"],
+            "stretching": ["stretching", "flexibility", "mobility", "warm up"],
+            "cardio": ["cardio", "cardio workout", "aerobic", "heart rate"],
+
+            # Work & Productivity
+            "studying": ["study", "study music", "focus music", "concentration"],
+            "working": ["working", "work", "office", "productivity", "focus"],
+            "reading": ["reading", "book", "literature", "study"],
+            "writing": ["writing", "creative writing", "journaling", "blogging"],
+            "coding": ["coding", "programming", "development", "software"],
+            "designing": ["designing", "creative", "art", "graphic design"],
+            "brainstorming": ["brainstorming", "ideation", "creative thinking", "planning"],
+            "meetings": ["meetings", "conference", "presentation", "business"],
+            "research": ["research", "analysis", "investigation", "learning"],
+
+            # Daily Activities
+            "cooking": ["cooking", "kitchen", "cooking music", "meal prep", "baking"],
+            "cleaning": ["cleaning", "housework", "chores", "organizing", "tidying"],
+            "commuting": ["commuting", "travel", "transit", "journey"],
+            "driving": ["driving", "road trip", "car music", "highway", "cruising"],
+            "shopping": ["shopping", "grocery", "retail", "errands"],
+            "gardening": ["gardening", "yard work", "outdoor", "planting"],
+            "laundry": ["laundry", "folding", "household", "chores"],
+            "organizing": ["organizing", "decluttering", "sorting", "arranging"],
+
+            # Relaxation & Leisure
+            "relaxing": ["relaxing", "chill time", "rest", "downtime", "unwind"],
+            "meditating": ["meditation", "mindfulness", "zen", "spiritual"],
+            "sleeping": ["sleep", "bedtime", "rest", "night time", "slumber"],
+            "napping": ["nap", "rest", "siesta", "power nap"],
+            "bathing": ["bath", "shower", "spa", "self care", "relaxation"],
+            "massage": ["massage", "spa", "relaxation", "wellness", "therapy"],
+
+            # Social & Entertainment
+            "party": ["party", "celebration", "festive", "social"],
+            "date night": ["date", "romantic", "dinner", "evening"],
+            "hanging out": ["hanging out", "socializing", "friends", "casual"],
+            "gaming": ["gaming", "game music", "video games", "esports"],
+            "watching tv": ["tv", "movies", "entertainment", "streaming"],
+            "hosting": ["hosting", "entertaining", "guests", "dinner party"],
+
+            # Creative Activities
+            "painting": ["painting", "art", "creative", "artistic"],
+            "crafting": ["crafting", "diy", "handmade", "creative"],
+            "photography": ["photography", "photo", "shooting", "creative"],
+            "music making": ["music production", "creating", "composing", "recording"],
+            "drawing": ["drawing", "sketching", "art", "illustration"],
+
+            # Sports & Games
+            "basketball": ["basketball", "hoops", "court", "sports"],
+            "football": ["football", "game day", "sports", "tailgate"],
+            "soccer": ["soccer", "football", "pitch", "sports"],
+            "tennis": ["tennis", "court", "racket", "sports"],
+            "golf": ["golf", "course", "putting", "sports"],
+            "baseball": ["baseball", "game", "stadium", "sports"],
+            "volleyball": ["volleyball", "beach", "court", "sports"],
+
+            # Seasonal & Special
+            "summer": ["summer", "beach", "vacation", "sunny"],
+            "winter": ["winter", "snow", "cold", "cozy"],
+            "spring": ["spring", "fresh", "renewal", "bloom"],
+            "fall": ["fall", "autumn", "leaves", "harvest"],
+            "holiday": ["holiday", "celebration", "festive", "seasonal"],
+            "birthday": ["birthday", "celebration", "party", "special"],
+            "wedding": ["wedding", "ceremony", "celebration", "romantic"],
+            "graduation": ["graduation", "achievement", "celebration", "milestone"],
+
+            # Travel & Adventure
+            "traveling": ["travel", "journey", "adventure", "exploration"],
+            "road trip": ["road trip", "driving", "adventure", "travel"],
+            "vacation": ["vacation", "holiday", "getaway", "leisure"],
+            "beach": ["beach", "ocean", "surf", "coastal", "tropical"],
+            "camping": ["camping", "outdoor", "nature", "wilderness"],
+            "flying": ["flight", "airplane", "travel", "journey"],
+
+            # Professional & Events
+            "networking": ["networking", "professional", "business", "social"],
+            "conference": ["conference", "seminar", "professional", "learning"],
+            "presentation": ["presentation", "speaking", "business", "professional"],
+            "interview": ["interview", "job", "professional", "meeting"],
+            "workshop": ["workshop", "learning", "training", "skill building"],
+
+            # Health & Wellness
+            "therapy": ["therapy", "counseling", "healing", "wellness"],
+            "doctor visit": ["medical", "health", "appointment", "clinical"],
+            "dental": ["dental", "dentist", "medical", "health"],
+            "physical therapy": ["physical therapy", "rehabilitation", "recovery", "healing"],
+
+            # Miscellaneous
+            "waiting": ["waiting", "queue", "patience", "downtime"],
+            "thinking": ["thinking", "contemplation", "reflection", "pondering"],
+            "people watching": ["people watching", "observation", "social", "public"],
+            "window shopping": ["browsing", "looking", "casual", "leisure"],
         }
 
         # Vibe-based terms
         vibe_terms = {
-            "chill": ["chill", "relaxed", "mellow", "calm", "peaceful"],
-            "upbeat": ["upbeat", "energetic", "happy", "positive", "lively"],
-            "focus": ["instrumental", "ambient", "concentration", "study"],
-            "energetic": ["high energy", "pump up", "motivational", "intense"],
+            "chill": ["chill", "relaxed", "mellow", "laid back", "easy listening"],
+            "mellow": ["mellow", "soft", "smooth", "gentle", "calm"],
+            "peaceful": ["peaceful", "tranquil", "serene", "zen", "meditation"],
+            "calm": ["calm", "soothing", "quiet", "peaceful", "relaxing"],
+            "relaxed": ["relaxed", "chill", "easy", "comfortable", "laid back"],
+
+            "moderate": ["moderate", "steady", "balanced", "consistent", "even"],
+            "steady": ["steady", "consistent", "rhythmic", "reliable", "constant"],
+            "focused": ["focus", "concentration", "study", "work", "instrumental"],
+            "balanced": ["balanced", "moderate", "even", "steady", "neutral"],
+
+            "energetic": ["energetic", "high energy", "powerful", "dynamic", "lively"],
+            "upbeat": ["upbeat", "positive", "happy", "lively", "cheerful"],
+            "intense": ["intense", "powerful", "strong", "fierce", "aggressive"],
+            "pumped": ["pump up", "energizing", "motivating", "driving", "powerful"],
+            "aggressive": ["aggressive", "hard", "intense", "fierce", "brutal"],
+            "powerful": ["powerful", "strong", "epic", "mighty", "intense"],
+
+            "happy": ["happy", "joyful", "cheerful", "positive", "uplifting"],
+            "uplifting": ["uplifting", "inspiring", "positive", "motivational", "encouraging"],
+            "motivational": ["motivational", "inspiring", "pump up", "energizing", "driving"],
+            "inspiring": ["inspiring", "uplifting", "motivational", "encouraging", "positive"],
+            "dark": ["dark", "moody", "atmospheric", "brooding", "mysterious"],
+            "melancholy": ["melancholy", "sad", "emotional", "introspective", "somber"],
         }
 
         queries = []
