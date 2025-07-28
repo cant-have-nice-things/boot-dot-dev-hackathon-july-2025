@@ -103,7 +103,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
               const positionToMinutes = (position) => {
                 // Log scale from 10 to 1440 minutes
                 const minLog = Math.log(10);
-                const maxLog = Math.log(1440);
+                const maxLog = Math.log(180);
                 const scale = (maxLog - minLog) / 100;
                 return Math.round(Math.exp(minLog + scale * position) / 5) * 5; // Round to nearest 5
               };
@@ -111,7 +111,7 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
               // Convert minutes back to slider position
               const minutesToPosition = (minutes) => {
                 const minLog = Math.log(10);
-                const maxLog = Math.log(1440);
+                const maxLog = Math.log(180);
                 const scale = (maxLog - minLog) / 100;
                 return (Math.log(minutes) - minLog) / scale;
               };
