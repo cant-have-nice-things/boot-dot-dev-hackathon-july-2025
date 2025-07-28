@@ -11,6 +11,7 @@ We build playlists with intention. Inspired by the structure of DJ sets and film
 You pick the activity, vibe, and duration. We generate a fresh, purpose-built playlist every time. No account. No shuffle chaos. No repeats.
 
 **Visit our website: [nicethings.wtf](https://nicethings.wtf)**
+(Optional) Download the live version as a PWA mobile app
 
 ## 🚀 Getting Started
 
@@ -18,9 +19,11 @@ This project is managed with a `Makefile` to simplify setup and development.
 
 ### Prerequisites
 
+- **docker**
 - **Python 3.13+**
 - **uv** (Python package manager)
-- **Node.js** (v18+ recommended)
+- **Node.js** (v22.17.0 recommended)
+- **nvm** (for easy install of exact node version)
 - **Git**
 
 ### Installation and Setup
@@ -40,6 +43,10 @@ This project is managed with a `Makefile` to simplify setup and development.
 ### Running the Application
 
 -   **Start both development servers (backend and frontend):**
+    ```bash
+    docker compose up -d
+    ```
+ 
     ```bash
     make dev
     ```
@@ -72,5 +79,5 @@ All common tasks are available as `make` commands. Run `make help` to see a full
 ## 🔧 Technology Stack
 
 -   **Backend:** FastAPI, Python 3.13+, Uvicorn
--   **Frontend:** React, TypeScript, Vite, Tailwind CSS
+-   **Frontend:** React, TypeScript, Vite, Shadcn, Tailwind CSS, Tanstack Router+Query+Form
 -   **Package Management:** `uv` (Python), `npm` (Node.js)
