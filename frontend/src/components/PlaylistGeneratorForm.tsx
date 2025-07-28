@@ -53,10 +53,6 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
     <Card>
       <CardHeader>
       <CardTitle className="text-xl font-semibold max-w-prose leading-snug">We’ll build a custom playlist that flows effortlessly from start to finish</CardTitle>
-        <CardDescription>
-        No repeats, no vibe-killers, just pure momentum.
-          
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <form
