@@ -25,5 +25,17 @@ class GeminiClient:
 
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
-                return part.inline_data.data
+                image_bytes = part.inline_data.data
+                with Image.open(BytesIO(image_bytes)) as img:
+                    # Resize if necessary and convert to JPEG
+                    quality = 95
+                    while True:
+                        with BytesIO() as output:
+                            img.save(output, format="JPEG", quality=quality)
+                            data = output.getvalue()
+                            if len(data) <= 256 * 1024:
+                                return data
+                        quality -= 5
+                        if quality < 10:
+                            return None # Could not compress enough
         return None
