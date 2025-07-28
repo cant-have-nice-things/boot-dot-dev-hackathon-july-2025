@@ -126,8 +126,13 @@ class PlaylistService:
         )
 
         playlist_id = final_playlist_data.get("id")
+        logger.info(f"Attempting to store playlist with ID: {playlist_id}")
+        logger.debug(f"Playlist data being stored (first 100 chars): {str(final_playlist_data)[:100]}...")
         if playlist_id:
             await self.playlist_repo.store_playlist_by_id(playlist_id, final_playlist_data)
+            logger.info(f"Successfully called store_playlist_by_id for ID: {playlist_id}")
+        else:
+            logger.info(f"Failed store_playlist_by_id for ID: {playlist_id}")
 
         return final_playlist_data
 
