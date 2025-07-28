@@ -1,10 +1,12 @@
 import logging
 import os
 import random
+import asyncio
 from typing import Any
 
 from ..integrations.reccobeats import ReccoBeatsClient
 from ..integrations.spotify import SpotifyClient
+from ..integrations.gemini import GeminiClient
 from .repo import PlaylistRepo
 
 logger = logging.getLogger(__name__)
@@ -21,10 +23,12 @@ class PlaylistService:
         spotify_client: SpotifyClient,
         reccobeats_client: ReccoBeatsClient,
         playlist_repo: PlaylistRepo,
+        gemini_client: GeminiClient,
     ):
         self.spotify_client = spotify_client
         self.reccobeats_client = reccobeats_client
         self.playlist_repo = playlist_repo
+        self.gemini_client = gemini_client
 
     async def create_activity_playlist(
         self, activity: str, vibe: str, duration_minutes: int = 30
@@ -551,22 +555,11 @@ class PlaylistService:
                 return None
 
             # Try to upload cover image
-            default_cover_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "..",
-                "default_playlist_cover.jpg",
-            )
-
-            image_url = None
-            if os.path.exists(default_cover_path):
-                if self.spotify_client.upload_playlist_cover(
-                    playlist["id"], default_cover_path
-                ):
-                    # Get updated playlist to retrieve image URL
-                    updated_playlist = self.spotify_client.get_playlist(playlist["id"])
-                    if updated_playlist and updated_playlist.get("images"):
-                        image_url = updated_playlist["images"][0].get("url")
+        image_url = asyncio.run(self.update_playlist_cover_image(
+            playlist_id=playlist["id"],
+            playlist_name=playlist_name,
+            playlist_description=playlist_description,
+        ))
 
             return {
                 "playlist_id": playlist["id"],
@@ -592,3 +585,18 @@ class PlaylistService:
             Playlist data if found, None otherwise
         """
         return await self.playlist_repo.get_playlist_by_id(playlist_id)
+
+    async def update_playlist_cover_image(self, playlist_id: str, playlist_name: str, playlist_description: str) -> str | None:
+        """
+        Generates and uploads a new cover image for a playlist.
+        """
+        try:
+            image_data = self.gemini_client.generate_playlist_image(playlist_name, playlist_description)
+            if image_data:
+                if self.spotify_client.upload_playlist_cover_image_data(playlist_id, image_data):
+                    updated_playlist = self.spotify_client.get_playlist(playlist_id)
+                    if updated_playlist and updated_playlist.get("images"):
+                        return updated_playlist["images"][0].get("url")
+        except Exception as e:
+            logger.error(f"Error updating playlist cover image: {e}")
+        return None

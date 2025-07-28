@@ -140,6 +140,18 @@ class SpotifyClient:
             with open(image_path, "rb") as img_file:
                 image_data = img_file.read()
 
+            return self.upload_playlist_cover_image_data(playlist_id, image_data)
+
+        except Exception as e:
+            logger.error(f"Failed to upload playlist cover: {e}")
+            return False
+
+    def upload_playlist_cover_image_data(self, playlist_id: str, image_data: bytes) -> bool:
+        """Upload cover image data to a playlist."""
+        if not self.is_connected():
+            raise RuntimeError("Spotify client not connected")
+
+        try:
             image_data_base64 = base64.b64encode(image_data).decode("utf-8")
             self.sp.playlist_upload_cover_image(playlist_id, image_data_base64)
 
