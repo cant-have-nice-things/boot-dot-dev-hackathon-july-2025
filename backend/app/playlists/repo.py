@@ -366,6 +366,34 @@ class PlaylistRepo:
             logger.error(f"Failed to get cached playlist: {e}")
             return None
 
+    async def get_cached_image(self, playlist_name: str, playlist_description: str) -> bytes | None:
+        """Get a cached image from Redis."""
+        cache_key = self._generate_cache_key(
+            "playlist_image", name=playlist_name, description=playlist_description
+        )
+        try:
+            image_data = await self.redis_client.get(cache_key)
+            if image_data:
+                logger.info(f"Found cached image for playlist: {playlist_name}")
+            return image_data
+        except Exception as e:
+            logger.error(f"Failed to get cached image for playlist {playlist_name}: {e}")
+            return None
+
+    async def cache_image(self, playlist_name: str, playlist_description: str, image_data: bytes) -> bool:
+        """Cache an image in Redis."""
+        cache_key = self._generate_cache_key(
+            "playlist_image", name=playlist_name, description=playlist_description
+        )
+        try:
+            success = await self.redis_client.set(cache_key, image_data)
+            if success:
+                logger.info(f"Cached image for playlist: {playlist_name}")
+            return success
+        except Exception as e:
+            logger.error(f"Failed to cache image for playlist {playlist_name}: {e}")
+            return False
+
     async def clear_cache(self, pattern: str = "*") -> int:
         """
         Clear cached data matching pattern.

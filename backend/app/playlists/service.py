@@ -591,8 +591,18 @@ class PlaylistService:
         Generates and uploads a new cover image for a playlist.
         """
         try:
+            # Check for cached image first
+            cached_image = await self.playlist_repo.get_cached_image(playlist_name, playlist_description)
+            if cached_image:
+                if self.spotify_client.upload_playlist_cover_image_data(playlist_id, cached_image):
+                    updated_playlist = self.spotify_client.get_playlist(playlist_id)
+                    if updated_playlist and updated_playlist.get("images"):
+                        return updated_playlist["images"][0].get("url")
+
             image_data = self.gemini_client.generate_playlist_image(playlist_name, playlist_description)
             if image_data:
+                # Cache the new image
+                await self.playlist_repo.cache_image(playlist_name, playlist_description, image_data)
                 if self.spotify_client.upload_playlist_cover_image_data(playlist_id, image_data):
                     updated_playlist = self.spotify_client.get_playlist(playlist_id)
                     if updated_playlist and updated_playlist.get("images"):
