@@ -477,7 +477,7 @@ class PlaylistService:
 
     async def get_playlist_by_id(self, playlist_id: str) -> dict[str, Any] | None:
         """
-        Get a playlist by its ID from cache.
+        Get a playlist by its ID from cache, with a fallback to Spotify API.
 
         Args:
             playlist_id: The playlist ID to retrieve
@@ -485,4 +485,87 @@ class PlaylistService:
         Returns:
             Playlist data if found, None otherwise
         """
-        return await self.playlist_repo.get_playlist_by_id(playlist_id)
+        # Try to get from cache first
+        cached_playlist = await self.playlist_repo.get_playlist_by_id(playlist_id)
+        if cached_playlist:
+            logger.info(f"Returning cached playlist for ID: {playlist_id}")
+            return cached_playlist
+
+        logger.info(f"Playlist {playlist_id} not in cache, fetching from Spotify")
+
+        # If not in cache, fetch from Spotify
+        if not self.spotify_client.is_connected():
+            logger.error("Spotify client not connected, cannot fetch playlist.")
+            # Try to connect
+            if not await self.spotify_client.connect():
+                return None
+
+        spotify_playlist = self.spotify_client.get_playlist(playlist_id)
+
+        if not spotify_playlist:
+            logger.warning(f"Could not find playlist {playlist_id} on Spotify")
+            return None
+
+        # Format the playlist data
+        formatted_playlist = self._format_playlist_from_spotify(spotify_playlist)
+
+        # Store in cache for future requests
+        if formatted_playlist:
+            await self.playlist_repo.store_playlist_by_id(
+                playlist_id, formatted_playlist
+            )
+            logger.info(f"Cached playlist {playlist_id} from Spotify")
+
+        return formatted_playlist
+
+    def _format_playlist_from_spotify(
+        self, spotify_playlist: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Format a playlist from the Spotify API into the application's format.
+        """
+        from datetime import datetime
+
+        # Calculate total duration
+        total_duration_ms = sum(
+            track["track"]["duration_ms"]
+            for track in spotify_playlist["tracks"]["items"]
+            if track.get("track")
+        )
+        total_duration_minutes = total_duration_ms / (1000 * 60)
+
+        # Format tracks
+        formatted_tracks = []
+        for item in spotify_playlist["tracks"]["items"]:
+            track = item.get("track")
+            if not track:
+                continue
+
+            formatted_tracks.append(
+                {
+                    "id": track.get("id"),
+                    "name": track.get("name"),
+                    "artist": track["artists"][0]["name"]
+                    if track.get("artists")
+                    else "Unknown Artist",
+                    "album": track.get("album", {}),
+                    "duration": track.get("duration_ms"),
+                    "spotifyUrl": track.get("external_urls", {}).get("spotify"),
+                    "previewUrl": track.get("preview_url"),
+                }
+            )
+
+        return {
+            "id": spotify_playlist.get("id"),
+            "name": spotify_playlist.get("name"),
+            "description": spotify_playlist.get("description"),
+            "spotifyUrl": spotify_playlist.get("external_urls", {}).get("spotify"),
+            "imageUrl": spotify_playlist["images"][0]["url"]
+            if spotify_playlist.get("images")
+            else "https://via.placeholder.com/300x300.png?text=Playlist+Image",
+            "tracks": formatted_tracks,
+            "duration": int(total_duration_minutes),
+            "createdAt": spotify_playlist.get("added_at", datetime.now().isoformat()),
+            "activity": None,  # Not available from Spotify
+            "vibe": None,  # Not available from Spotify
+        }
