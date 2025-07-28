@@ -37,5 +37,5 @@ class PlaylistResponse(BaseModel):
     duration: int  # Total playlist duration in minutes
     createdAt: str
     # NEW: Add activity and vibe to the response
-    activity: str
-    vibe: str
+    activity: str | None = None
+    vibe: str | None = None

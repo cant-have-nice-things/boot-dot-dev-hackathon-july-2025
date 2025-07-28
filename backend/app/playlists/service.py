@@ -495,16 +495,21 @@ class PlaylistService:
 
         # If not in cache, fetch from Spotify
         if not self.spotify_client.is_connected():
-            logger.error("Spotify client not connected, cannot fetch playlist.")
+            logger.error("Spotify client not connected, attempting to reconnect.")
             # Try to connect
-            if not await self.spotify_client.connect():
+            connected = await self.spotify_client.connect()
+            if not connected:
+                logger.error("Failed to reconnect to Spotify, cannot fetch playlist.")
                 return None
+            logger.info("Successfully reconnected to Spotify.")
 
+        logger.info(f"Fetching playlist {playlist_id} from Spotify API.")
         spotify_playlist = self.spotify_client.get_playlist(playlist_id)
 
         if not spotify_playlist:
             logger.warning(f"Could not find playlist {playlist_id} on Spotify")
             return None
+        logger.info(f"Successfully fetched playlist {playlist_id} from Spotify.")
 
         # Format the playlist data
         formatted_playlist = self._format_playlist_from_spotify(spotify_playlist)
