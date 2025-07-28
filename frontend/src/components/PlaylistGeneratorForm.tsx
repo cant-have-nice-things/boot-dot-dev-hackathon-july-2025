@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useGeneratePlaylist } from '@/hooks/api/usePlaylist'
 import { usePlaylistStorage } from '@/hooks/usePlaylistStorage'
-import { PLAYLIST_VIBES } from '@/lib/constants'
+import { VIBE_CATEGORIES, PLAYLIST_VIBES } from '@/lib/constants'
 
 interface PlaylistFormData {
   activity: string
@@ -157,10 +157,14 @@ export const PlaylistGeneratorForm = ({ onPlaylistGenerated }: PlaylistGenerator
                   onChange={e => field.handleChange(e.target.value)}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {PLAYLIST_VIBES.map(vibe => (
-                    <option key={vibe.value} value={vibe.value}>
-                      {vibe.label}
-                    </option>
+                  {Object.entries(VIBE_CATEGORIES).map(([category, vibes]) => (
+                    <optgroup key={category} label={category}>
+                      {vibes.map(vibe => (
+                        <option key={vibe.value} value={vibe.value}>
+                          {vibe.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 {field.state.meta.errors.length > 0 && (
