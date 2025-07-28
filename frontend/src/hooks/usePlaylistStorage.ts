@@ -51,26 +51,38 @@ export const usePlaylistStorage = () => {
   // Mutation for adding a playlist
   const addPlaylistMutation = useMutation({
     mutationFn: async (playlistResponse: PlaylistResponse) => {
-      // SIMPLIFIED: Just store the PlaylistResponse directly
-      const currentPlaylists = loadPlaylistsFromStorage()
+      // FIX: Use the current cache data instead of reading from localStorage again
+      // This ensures we're working with the most up-to-date state
+      const currentPlaylists = queryClient.getQueryData(QUERY_KEY) as StoredPlaylist[] || []
       const updatedPlaylists = [playlistResponse, ...currentPlaylists]
       return savePlaylistsToStorage(updatedPlaylists)
     },
     onSuccess: (updatedPlaylists) => {
       queryClient.setQueryData(QUERY_KEY, updatedPlaylists)
     },
+    onError: (error) => {
+      console.error('Failed to add playlist:', error)
+      // Optionally refresh from storage on error
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY })
+    }
   })
 
   // Mutation for removing a playlist
   const removePlaylistMutation = useMutation({
     mutationFn: async (playlistId: string) => {
-      const currentPlaylists = loadPlaylistsFromStorage()
+      // FIX: Use the current cache data instead of reading from localStorage again
+      const currentPlaylists = queryClient.getQueryData(QUERY_KEY) as StoredPlaylist[] || []
       const filteredPlaylists = currentPlaylists.filter(p => p.id !== playlistId)
       return savePlaylistsToStorage(filteredPlaylists)
     },
     onSuccess: (updatedPlaylists) => {
       queryClient.setQueryData(QUERY_KEY, updatedPlaylists)
     },
+    onError: (error) => {
+      console.error('Failed to remove playlist:', error)
+      // Optionally refresh from storage on error
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY })
+    }
   })
 
   // Convenience methods
