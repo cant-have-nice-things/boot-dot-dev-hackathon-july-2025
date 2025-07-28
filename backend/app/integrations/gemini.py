@@ -11,7 +11,7 @@ class GeminiClient:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel("gemini-pro-vision")
+        self.model = genai.GenerativeModel("gemini-1.5-flash")
 
     def generate_playlist_image(self, playlist_name: str, playlist_description: str) -> bytes | None:
         """
