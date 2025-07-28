@@ -11,6 +11,7 @@ dependencies = [
     "spotipy>=2.25.1",
     "uvicorn[standard]>=0.35.0",
     "google-generativeai>=0.7.1",
+    "Pillow>=10.5.0",
 ]
 
 [dependency-groups]
@@ -47,7 +48,6 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

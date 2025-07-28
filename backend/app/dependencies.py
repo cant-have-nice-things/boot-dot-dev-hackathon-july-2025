@@ -7,6 +7,7 @@ from fastapi import Depends
 from .db.redis import RedisClient, RedisConfig
 from .integrations.reccobeats import ReccoBeatsClient, ReccoBeatsConfig
 from .integrations.spotify import SpotifyClient, SpotifyConfig
+from .integrations.gemini import GeminiClient
 from .playlists import PlaylistRepo, PlaylistService
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ _reccobeats_config = None
 _redis_client = None
 _spotify_client = None
 _reccobeats_client = None
+_gemini_client = None
 
 # Configuration dependencies
 def get_redis_config() -> RedisConfig:
@@ -75,6 +77,14 @@ def get_reccobeats_client(
     return _reccobeats_client
 
 
+def get_gemini_client() -> GeminiClient:
+    """Get Gemini client instance."""
+    global _gemini_client
+    if _gemini_client is None:
+        _gemini_client = GeminiClient()
+    return _gemini_client
+
+
 # Repository dependencies
 def get_playlist_repo(
         redis_client: Annotated[RedisClient, Depends(get_redis_client)],
@@ -88,9 +98,10 @@ def get_playlist_service(
         spotify_client: Annotated[SpotifyClient, Depends(get_spotify_client)],
         reccobeats_client: Annotated[ReccoBeatsClient, Depends(get_reccobeats_client)],
         playlist_repo: Annotated[PlaylistRepo, Depends(get_playlist_repo)],
+        gemini_client: Annotated[GeminiClient, Depends(get_gemini_client)],
 ) -> PlaylistService:
     """Get Playlist service instance."""
-    return PlaylistService(spotify_client, reccobeats_client, playlist_repo)
+    return PlaylistService(spotify_client, reccobeats_client, playlist_repo, gemini_client)
 
 
 # Type aliases for easier imports

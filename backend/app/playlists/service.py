@@ -81,7 +81,7 @@ class PlaylistService:
             return {"error": "No suitable tracks with complete data found"}
 
         # Create Spotify playlist
-        playlist_result = self._create_spotify_playlist(
+        playlist_result = await self._create_spotify_playlist(
             activity=activity,
             vibe=vibe,
             tracks=formatted_tracks,
@@ -524,7 +524,7 @@ class PlaylistService:
 
         return formatted_tracks
 
-    def _create_spotify_playlist(
+    async def _create_spotify_playlist(
         self,
         activity: str,
         vibe: str,
@@ -555,11 +555,11 @@ class PlaylistService:
                 return None
 
             # Try to upload cover image
-        image_url = asyncio.run(self.update_playlist_cover_image(
-            playlist_id=playlist["id"],
-            playlist_name=playlist_name,
-            playlist_description=playlist_description,
-        ))
+            image_url = await self.update_playlist_cover_image(
+                playlist_id=playlist["id"],
+                playlist_name=playlist_name,
+                playlist_description=playlist_description,
+            )
 
             return {
                 "playlist_id": playlist["id"],
